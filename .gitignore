@@ -43,3 +43,9 @@ next-env.d.ts
 
 # design reference (not part of the demo)
 reference-example.html
+
+# IDE
+.idea/
+
+# standalone HTML demo (dev testing only)
+demo.html
