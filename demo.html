@@ -1,0 +1,23 @@
+<!-- ProofAge SDK - Integration Code -->
+<!-- 1. Include SDK before closing </body> tag -->
+<script src="https://app.proofage.xyz/sdk-build/kyc-loader.js"></script>
+
+<!-- 2. Initialize and start SDK -->
+<script>
+    // Initialize SDK
+    window.KycService.init({
+        apiUrl: 'https://api.proofage.xyz/v1',
+        apiKey: 'pk_live_b76W5AeFXoQjUoj54BEtw1F8EQj4wx4hHZ1wBVzjVTCN53gOikv9DQ2a',
+        openInNewTab: false,  // true = new tab, false = popup
+        language: 'en',
+        // Supported languages: 'cs', 'da', 'de', 'en', 'es', 'fr', 'id', 'it', 'lt', 'hu', 'nl', 'no', 'pl', 'pt-BR', 'pt-PT', 'ro', 'fi', 'sv', 'tr', 'el', 'bg', 'ru', 'hi', 'th', 'ja', 'zh-CN', 'zh-TW', 'ko'
+    });
+
+    // Start widget (e.g., on button click)
+    function startVerification() {
+        window.KycService.start();
+    }
+</script>
+
+<!-- 3. Button to start verification -->
+<button onclick="startVerification()">Start Verification</button>
