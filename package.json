@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@proofage/node": "file:../proofage-node-client",
+    "@proofage/node": "^0.1.0",
     "next": "^15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
