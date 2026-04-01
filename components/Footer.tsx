@@ -16,7 +16,7 @@ export function Footer() {
             ProofAge
           </a>
           <a
-            href="https://github.com/proofage"
+            href="https://github.com/ProofAge/demo"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[11px] uppercase tracking-[0.15em] text-ember-smoke/80 underline-offset-4 hover:text-ember-cream hover:underline"
