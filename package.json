@@ -6,11 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --test lib/*.test.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.3",
-    "@proofage/node": "^0.1.0",
+    "@proofage/node": "^0.11.0",
     "next": "^15.5.14",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
