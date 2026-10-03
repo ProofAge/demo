@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Footer } from '@/components/Footer';
 import { Hero, type HeroCopy } from '@/components/Hero';
 
@@ -11,9 +11,11 @@ type StorefrontProps = {
   /** Sent to the SDK as session metadata, so demo sessions can be told apart in the console. */
   sdkMetadata: Record<string, unknown>;
   copy: HeroCopy;
+  /** Rendered below the storefront, above the footer. */
+  children?: ReactNode;
 };
 
-export function Storefront({ apiKey, apiKeyEnvName, sdkMetadata, copy }: StorefrontProps) {
+export function Storefront({ apiKey, apiKeyEnvName, sdkMetadata, copy, children }: StorefrontProps) {
   const [verified, setVerified] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
 
@@ -53,6 +55,8 @@ export function Storefront({ apiKey, apiKeyEnvName, sdkMetadata, copy }: Storefr
           onErrorMessage={(message) => setBanner(message)}
         />
       </main>
+
+      {children}
 
       <Footer />
     </div>

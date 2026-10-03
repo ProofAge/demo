@@ -74,9 +74,9 @@ export function Hero({
                   <span className="text-[10px] uppercase tracking-[0.2em] text-ember-smoke">about 60 seconds</span>
                   <div className="h-px flex-1 bg-ember-smoke/20" />
                 </div>
-                <p className="mt-6 text-center text-[11px] text-ember-smoke/60">
+                <p className="mt-6 text-center text-[11px] text-ember-smoke">
                   Powered by{' '}
-                  <a href="https://proofage.xyz" target="_blank" rel="noopener noreferrer" className="text-ember-amber">
+                  <a href="https://proofage.xyz" target="_blank" rel="noopener noreferrer" className="text-ember-amber underline underline-offset-4">
                     ProofAge
                   </a>
                 </p>

@@ -136,7 +136,7 @@ export function VerifyButton({
             onClick={() => handleToggle(true)}
             className={`px-3 py-1.5 transition ${
               openInNewTab
-                ? 'bg-ember-amber/20 text-ember-amber'
+                ? 'bg-ember-amber/20 text-ember-amber-light'
                 : 'text-ember-smoke hover:text-ember-cream'
             }`}
           >
@@ -147,7 +147,7 @@ export function VerifyButton({
             onClick={() => handleToggle(false)}
             className={`px-3 py-1.5 transition ${
               !openInNewTab
-                ? 'bg-ember-amber/20 text-ember-amber'
+                ? 'bg-ember-amber/20 text-ember-amber-light'
                 : 'text-ember-smoke hover:text-ember-cream'
             }`}
           >

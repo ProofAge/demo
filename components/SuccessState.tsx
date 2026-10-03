@@ -10,13 +10,13 @@ export function SuccessState() {
       <p className="mt-4 text-sm leading-relaxed text-ember-smoke">
         You are confirmed as 18+. Welcome to Ember Box — this is a fictional demo storefront powered by ProofAge.
       </p>
-      <p className="mt-8 text-[11px] uppercase tracking-[0.2em] text-ember-smoke/70">
+      <p className="mt-8 text-[11px] uppercase tracking-[0.2em] text-ember-smoke">
         Verified by{' '}
         <a
           href="https://proofage.xyz"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-ember-amber underline-offset-4 hover:underline"
+          className="text-ember-amber underline underline-offset-4"
         >
           ProofAge
         </a>
