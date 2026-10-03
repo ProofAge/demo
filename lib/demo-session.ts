@@ -4,11 +4,10 @@ import { isVisitorId, parseSession, SESSION_COOKIE, VISITOR_COOKIE } from '@/lib
 import { normaliseFirstName, resultFromVerification, type LoadedResult } from '@/lib/demo-result';
 import { clientFor, demoWorkspaces } from '@/lib/proofage';
 
-export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demo.proofage.xyz').replace(/\/$/, '');
-}
-
-/** What /result shows for this browser. Never throws; API failures become `error`. */
+/**
+ * What /result shows for this browser. API failures become `error`; a missing or malformed
+ * PROOFAGE_DEMO_WORKSPACES throws on purpose, so a misconfigured deploy is a 500, not a guess.
+ */
 export async function loadResult(): Promise<LoadedResult> {
   const store = await cookies();
   const session = parseSession(store.get(SESSION_COOKIE)?.value);

@@ -1,5 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const VISITOR_COOKIE = 'pa_demo_visitor';
 export const SESSION_COOKIE = 'pa_demo_session';
 export const VISITOR_MAX_AGE = 60 * 60 * 24 * 30;
@@ -38,17 +40,17 @@ export function parseSession(raw: string | undefined): DemoSession | null {
   if (typeof slug !== 'string' || typeof verificationId !== 'string' || typeof url !== 'string') {
     return null;
   }
-  if (!slug || !verificationId || !isHttpUrl(url)) {
+  if (!slug || !UUID.test(verificationId) || !isHttpUrl(url)) {
     return null;
   }
   return { slug, verificationId, url };
 }
 
-export function cookieOptions(maxAge: number) {
+export function cookieOptions(maxAge: number, secure: boolean) {
   return {
     httpOnly: true as const,
     sameSite: 'lax' as const,
-    secure: process.env.NODE_ENV === 'production',
+    secure,
     path: '/' as const,
     maxAge,
   };

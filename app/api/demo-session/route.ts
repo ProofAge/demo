@@ -12,10 +12,14 @@ import {
   VISITOR_MAX_AGE,
 } from '@/lib/demo-cookies';
 import { isDemoSlug } from '@/lib/demo-pages';
-import { loadResult, siteUrl } from '@/lib/demo-session';
+import { loadResult } from '@/lib/demo-session';
 import { clientFor } from '@/lib/proofage';
 
 export const dynamic = 'force-dynamic';
+
+function isSecure(request: Request): boolean {
+  return new URL(request.url).protocol === 'https:';
+}
 
 /**
  * Creates the verification server-side, so it is HMAC-signed and carries an external_id
@@ -28,6 +32,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unknown demo' }, { status: 400 });
   }
 
+  const secure = isSecure(request);
   const store = await cookies();
   const existingVisitor = store.get(VISITOR_COOKIE)?.value;
   const visitorId = isVisitorId(existingVisitor) ? existingVisitor : newVisitorId();
@@ -44,7 +49,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const created = await client.verifications().create({
       external_id: visitorId,
-      callback_url: `${siteUrl()}/result`,
+      callback_url: new URL('/result', request.url).toString(),
       metadata: { demo: slug },
     });
     if (!created?.id || !created.url) {
@@ -52,11 +57,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const response = NextResponse.json({ url: created.url });
-    response.cookies.set(VISITOR_COOKIE, visitorId, cookieOptions(VISITOR_MAX_AGE));
+    response.cookies.set(VISITOR_COOKIE, visitorId, cookieOptions(VISITOR_MAX_AGE, secure));
     response.cookies.set(
       SESSION_COOKIE,
       serializeSession({ slug, verificationId: created.id, url: created.url }),
-      cookieOptions(SESSION_MAX_AGE),
+      cookieOptions(SESSION_MAX_AGE, secure),
     );
     return response;
   } catch (error) {
@@ -72,8 +77,8 @@ export async function GET(): Promise<NextResponse> {
   return NextResponse.json(await loadResult(), { headers: { 'Cache-Control': 'no-store' } });
 }
 
-export async function DELETE(): Promise<NextResponse> {
+export async function DELETE(request: Request): Promise<NextResponse> {
   const response = new NextResponse(null, { status: 204 });
-  response.cookies.set(SESSION_COOKIE, '', cookieOptions(0));
+  response.cookies.set(SESSION_COOKIE, '', cookieOptions(0, isSecure(request)));
   return response;
 }
