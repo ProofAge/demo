@@ -1,5 +1,15 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/e-wallet',
+        destination: '/eudi-wallet-age-verification',
+        permanent: true,
+      },
+    ];
+  },
+};
 
 export default nextConfig;

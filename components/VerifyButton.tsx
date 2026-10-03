@@ -9,12 +9,22 @@ const AUTO_CLOSE_DELAY_MS = 800;
 type VerifyButtonProps = {
   apiUrl: string;
   apiKey: string;
+  apiKeyEnvName: string;
   sdkUrl: string;
+  sdkMetadata: Record<string, unknown>;
   onVerified: (result: KycResult) => void;
   onErrorMessage: (message: string) => void;
 };
 
-export function VerifyButton({ apiUrl, apiKey, sdkUrl, onVerified, onErrorMessage }: VerifyButtonProps) {
+export function VerifyButton({
+  apiUrl,
+  apiKey,
+  apiKeyEnvName,
+  sdkUrl,
+  sdkMetadata,
+  onVerified,
+  onErrorMessage,
+}: VerifyButtonProps) {
   const [sdkReady, setSdkReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [openInNewTab, setOpenInNewTab] = useState(false);
@@ -22,6 +32,8 @@ export function VerifyButton({ apiUrl, apiKey, sdkUrl, onVerified, onErrorMessag
   openInNewTabRef.current = openInNewTab;
   const verifyTabRef = useRef<Window | null>(null);
 
+  const sdkMetadataRef = useRef(sdkMetadata);
+  sdkMetadataRef.current = sdkMetadata;
   const onVerifiedRef = useRef(onVerified);
   onVerifiedRef.current = onVerified;
   const onErrorMessageRef = useRef(onErrorMessage);
@@ -46,7 +58,7 @@ export function VerifyButton({ apiUrl, apiKey, sdkUrl, onVerified, onErrorMessag
         theme: 'dark',
         language: 'en',
         openInNewTab: newTab,
-        metadata: { demo: 'ember-box-next' },
+        metadata: sdkMetadataRef.current,
       });
       window.KycService.onComplete((result: KycResult) => {
         setBusy(false);
@@ -154,7 +166,7 @@ export function VerifyButton({ apiUrl, apiKey, sdkUrl, onVerified, onErrorMessag
       </button>
       {missingConfig && (
         <p className="mt-3 text-center text-[11px] text-ember-smoke">
-          Set NEXT_PUBLIC_PROOFAGE_API_URL, NEXT_PUBLIC_PROOFAGE_API_KEY, and NEXT_PUBLIC_PROOFAGE_SDK_URL in{' '}
+          Set NEXT_PUBLIC_PROOFAGE_API_URL, {apiKeyEnvName}, and NEXT_PUBLIC_PROOFAGE_SDK_URL in{' '}
           <code className="text-ember-amber">.env.local</code>.
         </p>
       )}

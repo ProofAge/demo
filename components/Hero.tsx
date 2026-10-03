@@ -2,16 +2,37 @@ import { VerifyButton } from '@/components/VerifyButton';
 import { SuccessState } from '@/components/SuccessState';
 import type { KycResult } from '@/types/kyc';
 
+export type HeroCopy = {
+  eyebrow: string;
+  heading: React.ReactNode;
+  intro: string;
+  cardTitle: string;
+  cardText: string;
+};
+
 type HeroProps = {
   verified: boolean;
   apiUrl: string;
   apiKey: string;
+  apiKeyEnvName: string;
   sdkUrl: string;
+  sdkMetadata: Record<string, unknown>;
+  copy: HeroCopy;
   onVerified: (result: KycResult) => void;
   onErrorMessage: (message: string) => void;
 };
 
-export function Hero({ verified, apiUrl, apiKey, sdkUrl, onVerified, onErrorMessage }: HeroProps) {
+export function Hero({
+  verified,
+  apiUrl,
+  apiKey,
+  apiKeyEnvName,
+  sdkUrl,
+  sdkMetadata,
+  copy,
+  onVerified,
+  onErrorMessage,
+}: HeroProps) {
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden">
       <div className="mx-auto grid w-full max-w-6xl flex-1 gap-12 px-6 pb-12 pt-28 md:grid-cols-2 md:px-16 md:pb-16 md:pt-32">
@@ -21,28 +42,29 @@ export function Hero({ verified, apiUrl, apiKey, sdkUrl, onVerified, onErrorMess
           ) : (
             <>
               <p className="mb-6 animate-fade-up text-[10px] uppercase tracking-[0.35em] text-ember-amber">
-                Members only · Demo
+                {copy.eyebrow}
               </p>
               <h1 className="animate-fade-up font-[family-name:var(--font-display)] text-[clamp(2.5rem,5vw,3.75rem)] font-light leading-[1.05] text-ember-cream [animation-delay:0.1s]">
-                Curated collections for <em className="text-ember-amber-light not-italic">discerning</em> adults
+                {copy.heading}
               </h1>
               <p className="mt-8 max-w-md animate-fade-up text-sm leading-relaxed text-ember-smoke [animation-delay:0.2s]">
-                Ember Box is a fictional brand for this ProofAge integration demo. Verify your age to continue — quick,
-                private, and secure.
+                {copy.intro}
               </p>
 
               <div className="relative mt-10 animate-fade-up border border-ember-amber/20 bg-white/[0.03] p-10 [animation-delay:0.3s] before:absolute before:left-0 before:right-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-ember-amber before:to-transparent">
                 <h2 className="font-[family-name:var(--font-display)] text-2xl font-normal text-ember-cream">
-                  Claim your Ember Box
+                  {copy.cardTitle}
                 </h2>
                 <p className="mt-2 text-xs leading-relaxed tracking-wide text-ember-smoke">
-                  Age verification is required before accessing restricted content. Powered by ProofAge.
+                  {copy.cardText}
                 </p>
                 <div className="mt-8">
                   <VerifyButton
                     apiUrl={apiUrl}
                     apiKey={apiKey}
+                    apiKeyEnvName={apiKeyEnvName}
                     sdkUrl={sdkUrl}
+                    sdkMetadata={sdkMetadata}
                     onVerified={onVerified}
                     onErrorMessage={onErrorMessage}
                   />
