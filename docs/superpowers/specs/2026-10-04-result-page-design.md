@@ -26,9 +26,8 @@ comes from `GET /v1/verifications/{id}`, as the SDK documentation asks.
   person passed, only whether a first name exists.
 - No database. ProofAge stores the session and its `external_id`; the demo
   keeps two cookies.
-- No change to the webhook receiver (`/api/webhooks/proofage`). It keeps its
-  current env (`PROOFAGE_API_KEY`, `PROOFAGE_SECRET_KEY`) and stays a code
-  sample.
+- The result page does not depend on webhooks: without storage a webhook has
+  nowhere to leave the outcome for the browser, so the page asks the API.
 - No live webhook view on the page.
 
 ## Demos and keys
@@ -98,6 +97,23 @@ nothing without the matching visitor id, which never leaves the server.
    `GET /v1/verifications/{id}/document` and takes `document.fields.first_name`.
    Nothing else from the document is read, returned or logged.
 
+## Webhook
+
+`/api/webhooks/proofage` becomes a working receiver for every demo workspace:
+
+- It reads `X-Auth-Client` (the workspace's public key), finds the entry in
+  `PROOFAGE_DEMO_WORKSPACES` whose `apiKey` matches, and verifies the
+  signature with `handleWebhook(request, { apiKey, secretKey })` from
+  `@proofage/node`. An unknown public key answers 401; a bad signature
+  answers what `handleWebhook` decides.
+- On success it answers 200 and logs `verification_id`, `status` and the
+  slug only, no personal data.
+- `PROOFAGE_API_KEY` and `PROOFAGE_SECRET_KEY` are no longer read anywhere.
+
+Both workspaces get `webhook_url` =
+`https://demo.proofage.xyz/api/webhooks/proofage`. They are live, so the
+change is previewed and applied only after the owner agrees.
+
 ## View model
 
 `lib/demo-result.ts` holds a pure function from the API status (plus the
@@ -160,6 +176,9 @@ No other new dependency.
   normalisation, cookie value parsing. These modules import nothing from Next
   or `@/` aliases. A `test` script is added to `package.json`.
 - `tsc --noEmit`, ESLint and `next build` pass.
+- The webhook route is tested by replaying a real test-workspace delivery
+  (`get-webhook-delivery-request`) against the local server: 200 for a known
+  key with a valid signature, 401 for an unknown `X-Auth-Client`.
 - End-to-end on a local server against a **test** workspace created for this
   (test sessions are never billed and stop in review): a person finishes the
   widget once per scenario, then `set-test-verification-outcome` drives
@@ -179,5 +198,8 @@ No other new dependency.
    The secret keys of live workspaces are copied by a person from the
    console (API keys tab); they are never returned to the assistant.
 2. Push; Vercel deploys.
-3. Remove `NEXT_PUBLIC_PROOFAGE_API_KEY` and
-   `NEXT_PUBLIC_PROOFAGE_WALLET_API_KEY` from Vercel once production works.
+3. Set `webhook_url` on both workspaces (preview, then confirm with the
+   owner), and check a delivery answers 2xx with `list-webhook-deliveries`.
+4. Remove `NEXT_PUBLIC_PROOFAGE_API_KEY`, `NEXT_PUBLIC_PROOFAGE_WALLET_API_KEY`,
+   `PROOFAGE_API_KEY` and `PROOFAGE_SECRET_KEY` from Vercel once production
+   works.
