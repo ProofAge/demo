@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Storefront } from '@/components/Storefront';
 import { WalletHowItWorks } from '@/components/WalletHowItWorks';
+import { publicKeyFor } from '@/lib/proofage';
 
 const PATH = '/eudi-wallet-age-verification';
 const TITLE = 'EUDI Wallet age verification — live demo';
@@ -64,9 +65,8 @@ export default function EudiWalletPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Storefront
-        apiKey={process.env.NEXT_PUBLIC_PROOFAGE_WALLET_API_KEY ?? ''}
-        apiKeyEnvName="NEXT_PUBLIC_PROOFAGE_WALLET_API_KEY"
-        sdkMetadata={{ demo: 'ember-box-eudi-wallet' }}
+        slug="eudi-wallet"
+        apiKey={publicKeyFor('eudi-wallet')}
         copy={{
           eyebrow: 'Digital ID wallet · Live demo',
           heading: (

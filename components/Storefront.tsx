@@ -3,20 +3,18 @@
 import { type ReactNode, useState } from 'react';
 import { Footer } from '@/components/Footer';
 import { Hero, type HeroCopy } from '@/components/Hero';
+import type { DemoSlug } from '@/lib/demo-pages';
 
 type StorefrontProps = {
+  slug: DemoSlug;
+  /** Public key of the demo's workspace, for the browser SDK's init(). */
   apiKey: string;
-  /** Name of the env var that holds `apiKey`, shown when it is missing. */
-  apiKeyEnvName: string;
-  /** Sent to the SDK as session metadata, so demo sessions can be told apart in the console. */
-  sdkMetadata: Record<string, unknown>;
   copy: HeroCopy;
   /** Rendered below the storefront, above the footer. */
   children?: ReactNode;
 };
 
-export function Storefront({ apiKey, apiKeyEnvName, sdkMetadata, copy, children }: StorefrontProps) {
-  const [verified, setVerified] = useState(false);
+export function Storefront({ slug, apiKey, copy, children }: StorefrontProps) {
   const [banner, setBanner] = useState<string | null>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_PROOFAGE_API_URL ?? 'https://api.proofage.xyz/v1';
@@ -44,14 +42,11 @@ export function Storefront({ apiKey, apiKeyEnvName, sdkMetadata, copy, children 
 
       <main className="flex min-h-0 flex-1 flex-col">
         <Hero
-          verified={verified}
+          slug={slug}
           apiUrl={apiUrl}
           apiKey={apiKey}
-          apiKeyEnvName={apiKeyEnvName}
           sdkUrl={sdkUrl}
-          sdkMetadata={sdkMetadata}
           copy={copy}
-          onVerified={() => setVerified(true)}
           onErrorMessage={(message) => setBanner(message)}
         />
       </main>

@@ -1,11 +1,11 @@
 import { Storefront } from '@/components/Storefront';
+import { publicKeyFor } from '@/lib/proofage';
 
 export default function HomePage() {
   return (
     <Storefront
-      apiKey={process.env.NEXT_PUBLIC_PROOFAGE_API_KEY ?? ''}
-      apiKeyEnvName="NEXT_PUBLIC_PROOFAGE_API_KEY"
-      sdkMetadata={{ demo: 'ember-box-next' }}
+      slug="ember-box"
+      apiKey={publicKeyFor('ember-box')}
       copy={{
         eyebrow: 'Members only · Demo',
         heading: (

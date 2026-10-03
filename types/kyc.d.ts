@@ -1,10 +1,13 @@
+/** Passed to onComplete when the person reaches the final screen. It carries no outcome: ask the backend. */
 export interface KycResult {
-  success: boolean;
+  verificationId: string;
+  /** @deprecated Same value as verificationId. */
   sessionId: string;
-  verificationId?: string | null;
-  status: 'completed' | 'pending' | 'failed';
-  redirectUrl?: string | null;
-  data?: unknown;
+}
+
+export interface KycStartOptions {
+  /** URL of a verification created server-side (`url` from POST /v1/verifications). */
+  verificationUrl?: string;
 }
 
 export interface KycServiceConfig {
@@ -19,7 +22,7 @@ export interface KycServiceConfig {
 
 export interface KycServiceGlobal {
   init: (config: KycServiceConfig) => void;
-  start: () => Promise<void>;
+  start: (options?: KycStartOptions) => Promise<void>;
   onComplete: (callback: (result: KycResult) => void) => void;
   onError: (callback: (error: unknown) => void) => void;
   /** Dismisses the popup / iframe widget (call after success to return to the host page). */

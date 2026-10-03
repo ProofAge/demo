@@ -1,30 +1,22 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useCallback, useRef, useState } from 'react';
-import type { KycResult } from '@/types/kyc';
+import type { DemoSlug } from '@/lib/demo-pages';
 
 const AUTO_CLOSE_DELAY_MS = 800;
 
 type VerifyButtonProps = {
+  slug: DemoSlug;
   apiUrl: string;
   apiKey: string;
-  apiKeyEnvName: string;
   sdkUrl: string;
-  sdkMetadata: Record<string, unknown>;
-  onVerified: (result: KycResult) => void;
   onErrorMessage: (message: string) => void;
 };
 
-export function VerifyButton({
-  apiUrl,
-  apiKey,
-  apiKeyEnvName,
-  sdkUrl,
-  sdkMetadata,
-  onVerified,
-  onErrorMessage,
-}: VerifyButtonProps) {
+export function VerifyButton({ slug, apiUrl, apiKey, sdkUrl, onErrorMessage }: VerifyButtonProps) {
+  const router = useRouter();
   const [sdkReady, setSdkReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [openInNewTab, setOpenInNewTab] = useState(false);
@@ -32,10 +24,6 @@ export function VerifyButton({
   openInNewTabRef.current = openInNewTab;
   const verifyTabRef = useRef<Window | null>(null);
 
-  const sdkMetadataRef = useRef(sdkMetadata);
-  sdkMetadataRef.current = sdkMetadata;
-  const onVerifiedRef = useRef(onVerified);
-  onVerifiedRef.current = onVerified;
   const onErrorMessageRef = useRef(onErrorMessage);
   onErrorMessageRef.current = onErrorMessage;
 
@@ -58,12 +46,11 @@ export function VerifyButton({
         theme: 'dark',
         language: 'en',
         openInNewTab: newTab,
-        metadata: sdkMetadataRef.current,
       });
-      window.KycService.onComplete((result: KycResult) => {
+      window.KycService.onComplete(() => {
         setBusy(false);
         window.setTimeout(closeVerifyTab, AUTO_CLOSE_DELAY_MS);
-        onVerifiedRef.current(result);
+        router.push('/result');
       });
       window.KycService.onError((err: unknown) => {
         setBusy(false);
@@ -74,7 +61,7 @@ export function VerifyButton({
         onErrorMessageRef.current(message);
       });
     },
-    [apiKey, apiUrl, closeVerifyTab],
+    [apiKey, apiUrl, closeVerifyTab, router],
   );
 
   const configureSdk = useCallback(() => {
@@ -90,6 +77,19 @@ export function VerifyButton({
     }
   };
 
+  const createSession = async (): Promise<string> => {
+    const response = await fetch('/api/demo-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug }),
+    });
+    const body = (await response.json().catch(() => null)) as { url?: string; error?: string } | null;
+    if (!response.ok || !body?.url) {
+      throw new Error(body?.error ?? 'Could not start the verification. Please try again.');
+    }
+    return body.url;
+  };
+
   const handleClick = async () => {
     if (!sdkReady || !window.KycService) {
       onErrorMessageRef.current('SDK is still loading. Please wait.');
@@ -97,28 +97,22 @@ export function VerifyButton({
     }
     setBusy(true);
 
+    const origOpen = window.open.bind(window);
     if (openInNewTabRef.current) {
-      const origOpen = window.open.bind(window);
       window.open = (...args: Parameters<typeof window.open>) => {
-        const w = origOpen(...args);
-        verifyTabRef.current = w;
-        return w;
+        const opened = origOpen(...args);
+        verifyTabRef.current = opened;
+        return opened;
       };
-      try {
-        await window.KycService.start();
-      } catch (e) {
-        setBusy(false);
-        onErrorMessageRef.current(e instanceof Error ? e.message : 'Failed to start verification');
-      } finally {
-        window.open = origOpen;
-      }
-    } else {
-      try {
-        await window.KycService.start();
-      } catch (e) {
-        setBusy(false);
-        onErrorMessageRef.current(e instanceof Error ? e.message : 'Failed to start verification');
-      }
+    }
+    try {
+      const verificationUrl = await createSession();
+      await window.KycService.start({ verificationUrl });
+    } catch (e) {
+      setBusy(false);
+      onErrorMessageRef.current(e instanceof Error ? e.message : 'Failed to start verification');
+    } finally {
+      window.open = origOpen;
     }
   };
 
@@ -166,8 +160,7 @@ export function VerifyButton({
       </button>
       {missingConfig && (
         <p className="mt-3 text-center text-[11px] text-ember-smoke">
-          Set NEXT_PUBLIC_PROOFAGE_API_URL, {apiKeyEnvName}, and NEXT_PUBLIC_PROOFAGE_SDK_URL in{' '}
-          <code className="text-ember-amber">.env.local</code>.
+          This demo is not configured. Set NEXT_PUBLIC_PROOFAGE_API_URL, NEXT_PUBLIC_PROOFAGE_SDK_URL and PROOFAGE_DEMO_WORKSPACES.
         </p>
       )}
     </div>
