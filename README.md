@@ -23,13 +23,13 @@ See the full platform at [proofage.xyz](https://proofage.xyz) and the live demo 
 
 | Layer | What it demonstrates |
 |---|---|
-| **Client SDK** | Loading `kyc-loader.js` dynamically, calling `KycService.start()`, handling `onComplete` / `onError` callbacks |
-| **Server-side verification creation** | `POST /api/create-verification` — creates a verification session with `callback_url` using HMAC-signed requests via `@proofage/node` |
-| **Webhook receiver** | `POST /api/webhooks/proofage` — verifies `X-HMAC-Signature`, `X-Timestamp`, `X-Auth-Client` headers and processes the age verification result |
-| **Verification polling** | `GET /api/verification/[id]` — fetches a verification session server-side by ID |
-| **Realistic UI** | Full-page age gate with verified / unverified states, error handling, and a branded fictional storefront (Ember Box) |
+| **Client SDK** | Loading `kyc-loader.js` dynamically, calling `KycService.start({ verificationUrl })`, handling `onComplete` / `onError` callbacks |
+| **Server-side session** | `POST /api/demo-session` creates the verification with HMAC signing (`@proofage/node`), an `external_id` from an httpOnly visitor cookie and `callback_url` = `/result`; the browser opens it with `KycService.start({ verificationUrl })` |
+| **Result page** | `/result` asks ProofAge for the outcome (`GET /v1/verifications/{id}`, plus the document's first name when approved) and checks `external_id` against the visitor cookie before showing anything |
+| **Webhook receiver** | `POST /api/webhooks/proofage` picks the workspace by `X-Auth-Client` and verifies the signature with its secret |
+| **Realistic UI** | A branded fictional storefront (Ember Box) with members-only content, plus declined, retry and pending screens |
 
-> **Client vs server flow:** The JS SDK creates its own verification session using your publishable key (browser-only, no backend needed). The `create-verification` route is an optional **server-to-server** path useful when you need `callback_url` webhooks or want to keep flow parameters off the client.
+> **Why create the session on the server:** only a signed server request can set `external_id`; the browser SDK's unsigned create drops it. The outcome comes from the API, never from the browser's `onComplete`, which carries no result.
 
 ---
 
@@ -61,21 +61,22 @@ cp .env.example .env.local
 Fill in your keys from your [ProofAge workspace](https://proofage.xyz):
 
 ```env
-# Your publishable (public) key — safe to expose to the browser
-NEXT_PUBLIC_PROOFAGE_API_KEY=pk_test_...
-
-# ProofAge API base URL
-NEXT_PUBLIC_PROOFAGE_API_URL=https://api.proofage.xyz/v1
-
-# ProofAge JS SDK URL
-NEXT_PUBLIC_PROOFAGE_SDK_URL=https://app.proofage.xyz/sdk-build/kyc-loader.js
-
-# Secret key — server-side only, never expose to the browser
-PROOFAGE_SECRET_KEY=sk_test_...
-
-# Public URL of this app (used to build the webhook callback_url)
+# Public URL of this demo (metadata, sitemap, and the /result redirect). No trailing slash.
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Server-only: one entry per demo page, keyed by slug. The public key reaches the
+# browser SDK through the page; the secret key signs API calls and verifies webhooks.
+#   ember-box   → /
+#   eudi-wallet → /eudi-wallet-age-verification
+PROOFAGE_DEMO_WORKSPACES={"ember-box":{"apiKey":"pk_test_...","secretKey":"sk_test_..."},"eudi-wallet":{"apiKey":"pk_test_...","secretKey":"sk_test_..."}}
+
+# Defaults baked into the code — only override for local dev or custom deployments:
+# NEXT_PUBLIC_PROOFAGE_API_URL=https://api.proofage.xyz/v1
+# NEXT_PUBLIC_PROOFAGE_SDK_URL=https://app.proofage.xyz/sdk-build/kyc-loader.js
+# PROOFAGE_BASE_URL=https://api.proofage.xyz
 ```
+
+Each demo page has its own workspace; add an entry to `PROOFAGE_DEMO_WORKSPACES` and a page to add a demo.
 
 Use **test keys** during development. Get them at [proofage.xyz](https://proofage.xyz).
 
@@ -101,7 +102,7 @@ ngrok http 3000
 cloudflared tunnel --url http://localhost:3000
 ```
 
-Set `NEXT_PUBLIC_SITE_URL` to the public HTTPS URL the tunnel provides. The `create-verification` route uses it to build the `callback_url` sent to ProofAge.
+Set `NEXT_PUBLIC_SITE_URL` to the public HTTPS URL the tunnel provides. The `demo-session` route uses it to build the `callback_url` (`/result`) sent to ProofAge.
 
 ---
 
@@ -123,18 +124,22 @@ Or connect the repository in the [Vercel dashboard](https://vercel.com). Set the
 ```
 app/
   page.tsx                          # Age gate page (Ember Box storefront)
+  result/page.tsx                   # Result page (outcome from the ProofAge API)
   layout.tsx                        # Root layout with fonts and metadata
   api/
-    create-verification/route.ts    # Server-to-server verification creation
-    verification/[id]/route.ts      # Fetch verification by ID
-    webhooks/proofage/route.ts      # Webhook receiver with HMAC verification
+    demo-session/route.ts           # Create (POST), read (GET), clear (DELETE) the demo session
+    webhooks/proofage/route.ts      # Webhook receiver, verified with the sending workspace's keys
 components/
-  Hero.tsx                          # Main age gate UI (unverified / verified states)
-  VerifyButton.tsx                  # Button that triggers the ProofAge SDK flow
-  SuccessState.tsx                  # Post-verification success content
+  Hero.tsx                          # Main age gate UI
+  VerifyButton.tsx                  # Creates the session, then starts the ProofAge SDK flow
+  ResultScreen.tsx                  # Result states, polling while a decision is pending
+  MembersContent.tsx                # Members-only content shown when approved
   Footer.tsx
 lib/
-  proofage.ts                       # Shared ProofAge client helpers
+  proofage.ts                       # Per-workspace ProofAge clients
+  demo-workspaces.ts                # PROOFAGE_DEMO_WORKSPACES parsing
+  demo-cookies.ts                   # Visitor and session cookies
+  demo-result.ts                    # Pure mapping from API status to what the page shows
 ```
 
 ---
