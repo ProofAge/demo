@@ -24,6 +24,8 @@ export interface KycServiceGlobal {
   init: (config: KycServiceConfig) => void;
   start: (options?: KycStartOptions) => Promise<void>;
   onComplete: (callback: (result: KycResult) => void) => void;
+  /** Fires when the person dismisses the widget (not on close()). */
+  onClose: (callback: () => void) => void;
   onError: (callback: (error: unknown) => void) => void;
   /** Dismisses the popup / iframe widget (call after success to return to the host page). */
   close?: () => void;
