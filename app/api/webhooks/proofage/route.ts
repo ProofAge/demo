@@ -23,11 +23,7 @@ export async function POST(request: Request): Promise<Response> {
         status: payload.status,
       });
     },
-    {
-      apiKey,
-      secretKey,
-      tolerance: Number(process.env.PROOFAGE_WEBHOOK_TOLERANCE ?? 300),
-    },
+    { apiKey, secretKey },
   );
   return handle(request);
 }
