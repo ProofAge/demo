@@ -61,7 +61,9 @@ never a silent fallback to another workspace.
 | `pa_demo_visitor` | random 128-bit id (base64url) | 30 days | sent as `external_id`; proves the result belongs to this browser |
 | `pa_demo_session` | `{"slug":"…","verificationId":"…"}` | 24 hours | which verification the result page shows |
 
-Both are `httpOnly`, `Secure` (except on localhost), `SameSite=Lax`, path `/`.
+Both are `httpOnly`, `SameSite=Lax`, path `/`; `Secure` follows the request
+protocol (https), not the build mode. The session's `verificationId` must be a
+UUID, otherwise the cookie is ignored.
 Neither is signed: the result page reads a verification only when its
 `external_id` equals the visitor cookie, so a forged session cookie shows
 nothing without the matching visitor id, which never leaves the server.
@@ -73,9 +75,10 @@ nothing without the matching visitor id, which never leaves the server.
    `@proofage/node` with:
    - `external_id`: the visitor id (only a signed server request can set it;
      the browser SDK's unsigned create drops it);
-   - `callback_url`: `{SITE_URL}/result` (where the hosted page sends the
-     person when it finishes, e.g. in a new tab or on a phone after the QR
-     handoff);
+   - `callback_url`: `/result` on the origin the request came in on (not
+     `NEXT_PUBLIC_SITE_URL`, so previews and local runs never redirect to
+     production); the hosted page sends the person there when it finishes,
+     e.g. in a new tab or on a phone after the QR handoff;
    - `metadata`: `{ "demo": slug }`;
    then sets the session cookie and answers `{ url }`. If the session cookie
    already points at a verification of the same slug that is still
@@ -84,7 +87,12 @@ nothing without the matching visitor id, which never leaves the server.
    In "New tab" mode the SDK opens the tab itself; Chrome and Firefox allow it
    for a few seconds after the click, and where the browser blocks it (Safari)
    the SDK shows its own "open verification" link overlay
-   (`showNewTabBlockedOverlay`), so the demo needs no fallback of its own.
+   (`showNewTabBlockedOverlay`). In that case, and whenever the original tab
+   never receives `onComplete`, the storefront polls `GET /api/demo-session`
+   every 3 seconds (up to 20 minutes) in New tab mode after `start()` resolves,
+   and goes to `/result` once the state is no longer `not_finished`. Polling
+   stops on unmount, on `onComplete`/`onError` and when the widget is closed
+   (`onClose`). Popup mode needs no polling.
 3. **Complete.** `onComplete` navigates to `/result`.
 4. **Result.** `/result` is a server component. It reads both cookies, loads
    the verification with the slug's keys, checks `external_id`, and renders
@@ -103,9 +111,10 @@ nothing without the matching visitor id, which never leaves the server.
 
 - It reads `X-Auth-Client` (the workspace's public key), finds the entry in
   `PROOFAGE_DEMO_WORKSPACES` whose `apiKey` matches, and verifies the
-  signature with `handleWebhook(request, { apiKey, secretKey })` from
+  signature with `webhookHandler(fn, { apiKey, secretKey })` from
   `@proofage/node`. An unknown public key answers 401; a bad signature
-  answers what `handleWebhook` decides.
+  answers what `webhookHandler` decides. The timestamp tolerance is the
+  SDK's own: it reads `PROOFAGE_WEBHOOK_TOLERANCE` from the environment.
 - On success it answers 200 and logs `verification_id`, `status` and the
   slug only, no personal data.
 - `PROOFAGE_API_KEY` and `PROOFAGE_SECRET_KEY` are no longer read anywhere.
