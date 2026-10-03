@@ -69,11 +69,11 @@ nothing without the matching visitor id, which never leaves the server.
 
 ## Flow
 
-1. **Intent.** On the first `pointerenter`, `touchstart` or `focus` of the
-   verify button, the client calls `POST /api/demo-session` with the slug.
-   The route ensures a visitor cookie, creates a verification through
+1. **Click.** The verify button calls `POST /api/demo-session` with the slug.
+   The route ensures a visitor cookie and creates a verification through
    `@proofage/node` with:
-   - `external_id`: the visitor id;
+   - `external_id`: the visitor id (only a signed server request can set it;
+     the browser SDK's unsigned create drops it);
    - `callback_url`: `{SITE_URL}/result` (where the hosted page sends the
      person when it finishes, e.g. in a new tab or on a phone after the QR
      handoff);
@@ -81,11 +81,11 @@ nothing without the matching visitor id, which never leaves the server.
    then sets the session cookie and answers `{ url }`. If the session cookie
    already points at a verification of the same slug that is still
    `created`, it is reused instead of creating another one.
-2. **Click.** If the URL is ready, the client calls
-   `KycService.start({ verificationUrl })` synchronously, so "New tab" keeps
-   the user gesture. If it is not ready, the client awaits it and starts in
-   popup mode, whatever the toggle says, because a new tab opened after an
-   await is blocked.
+2. **Start.** The client calls `KycService.start({ verificationUrl: url })`.
+   In "New tab" mode the SDK opens the tab itself; Chrome and Firefox allow it
+   for a few seconds after the click, and where the browser blocks it (Safari)
+   the SDK shows its own "open verification" link overlay
+   (`showNewTabBlockedOverlay`), so the demo needs no fallback of its own.
 3. **Complete.** `onComplete` navigates to `/result`.
 4. **Result.** `/result` is a server component. It reads both cookies, loads
    the verification with the slug's keys, checks `external_id`, and renders
