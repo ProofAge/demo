@@ -26,22 +26,33 @@ export function ResultScreen({ initial }: { initial: LoadedResult }) {
       return;
     }
     const startedAt = Date.now();
-    const timer = window.setInterval(async () => {
+    let timer: number | undefined;
+    let cancelled = false;
+    const tick = async () => {
       if (Date.now() - startedAt > POLL_LIMIT_MS) {
-        window.clearInterval(timer);
         setTimedOut(true);
         return;
       }
       try {
         const response = await fetch('/api/demo-session', { cache: 'no-store' });
         if (response.ok) {
-          setResult((await response.json()) as LoadedResult);
+          const next = (await response.json()) as LoadedResult;
+          if (!cancelled && next.kind !== 'error') {
+            setResult(next);
+          }
         }
       } catch {
         // Keep the last result; the next tick retries.
       }
-    }, POLL_INTERVAL_MS);
-    return () => window.clearInterval(timer);
+      if (!cancelled) {
+        timer = window.setTimeout(tick, POLL_INTERVAL_MS);
+      }
+    };
+    timer = window.setTimeout(tick, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [pending]);
 
   const startOver = async (slug: string) => {
@@ -52,7 +63,7 @@ export function ResultScreen({ initial }: { initial: LoadedResult }) {
   return (
     <div className="flex min-h-dvh flex-col bg-ember-dark">
       <header className="flex items-center justify-between px-6 py-8 md:px-16">
-        <Link href="/" className="font-[family-name:var(--font-display)] text-lg font-light uppercase tracking-[0.35em] text-ember-cream">
+        <Link href={result.kind === 'ok' ? pathForSlug(result.slug) : '/'} className="font-[family-name:var(--font-display)] text-lg font-light uppercase tracking-[0.35em] text-ember-cream">
           Ember <span className="text-ember-amber">Box</span>
         </Link>
       </header>
@@ -70,7 +81,9 @@ export function ResultScreen({ initial }: { initial: LoadedResult }) {
         )}
         {result.kind === 'ok' && (
           <>
-            <StateView view={result.view} timedOut={timedOut} onStartOver={() => startOver(result.slug)} />
+            <div aria-live="polite">
+              <StateView view={result.view} timedOut={timedOut} onStartOver={() => startOver(result.slug)} />
+            </div>
             <StorePanel view={result.view} />
           </>
         )}
