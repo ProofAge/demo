@@ -89,6 +89,8 @@ export function VerifyButton({ slug, apiUrl, apiKey, sdkUrl, onErrorMessage }: V
         theme: 'dark',
         language: 'en',
         openInNewTab: newTab,
+        // The EUDI page opens on the digital ID wallet; the person consents in the wallet.
+        ...(slug === 'eudi-wallet' ? { method: 'wallet' as const } : {}),
       });
       window.KycService.onComplete(() => {
         stopPolling();
@@ -110,7 +112,7 @@ export function VerifyButton({ slug, apiUrl, apiKey, sdkUrl, onErrorMessage }: V
         onErrorMessageRef.current(message);
       });
     },
-    [apiKey, apiUrl, closeVerifyTab, router, stopPolling],
+    [apiKey, apiUrl, closeVerifyTab, router, slug, stopPolling],
   );
 
   const configureSdk = useCallback(() => {

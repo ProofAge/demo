@@ -17,6 +17,7 @@ export interface KycServiceConfig {
   language?: string;
   containerId?: string;
   openInNewTab?: boolean;
+  method?: 'wallet';
   metadata?: Record<string, unknown>;
 }
 
