@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { normaliseFirstName, resultFromVerification, toResultView } from './demo-result.ts';
 
-const URL_ = 'https://idv.proofage.xyz/v/tok';
+const URL_ = 'https://idv.proofage.net/v/tok';
 
 test('maps every API status', () => {
   const cases: Array<[string, string, boolean]> = [

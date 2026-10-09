@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
 };
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demo.proofage.xyz').replace(/\/$/, '');
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demo.proofage.net').replace(/\/$/, '');
 
 const jsonLd = {
   '@context': 'https://schema.org',

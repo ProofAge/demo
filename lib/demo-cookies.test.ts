@@ -18,7 +18,7 @@ test('isVisitorId rejects anything else', () => {
 });
 
 test('session round-trips', () => {
-  const session = { slug: 'eudi-wallet', verificationId: '01a0eed6-610b-73b2-94d0-117ec4a8455b', url: 'https://idv.proofage.xyz/v/tok' };
+  const session = { slug: 'eudi-wallet', verificationId: '01a0eed6-610b-73b2-94d0-117ec4a8455b', url: 'https://idv.proofage.net/v/tok' };
   assert.deepEqual(parseSession(serializeSession(session)), session);
 });
 

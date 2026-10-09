@@ -17,8 +17,8 @@ type StorefrontProps = {
 export function Storefront({ slug, apiKey, copy, children }: StorefrontProps) {
   const [banner, setBanner] = useState<string | null>(null);
 
-  const apiUrl = process.env.NEXT_PUBLIC_PROOFAGE_API_URL ?? 'https://api.proofage.xyz/v1';
-  const sdkUrl = process.env.NEXT_PUBLIC_PROOFAGE_SDK_URL ?? 'https://app.proofage.xyz/sdk-build/kyc-loader.js';
+  const apiUrl = process.env.NEXT_PUBLIC_PROOFAGE_API_URL ?? 'https://api.proofage.net/v1';
+  const sdkUrl = process.env.NEXT_PUBLIC_PROOFAGE_SDK_URL ?? 'https://app.proofage.net/sdk-build/kyc-loader.js';
 
   return (
     <div className="flex min-h-dvh flex-col overflow-x-hidden bg-ember-dark">

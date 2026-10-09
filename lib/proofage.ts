@@ -22,7 +22,7 @@ export function clientFor(slug: string): ProofAgeClient {
     client = new ProofAgeClient({
       apiKey,
       secretKey,
-      baseUrl: process.env.PROOFAGE_BASE_URL ?? 'https://api.proofage.xyz',
+      baseUrl: process.env.PROOFAGE_BASE_URL ?? 'https://api.proofage.net',
       version: 'v1',
     });
     clients.set(slug, client);

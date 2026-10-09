@@ -4,7 +4,7 @@ const BUILD_DATE = '2026-03-31';
 const WALLET_PAGE_DATE = '2026-10-03';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demo.proofage.xyz').replace(/\/$/, '');
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demo.proofage.net').replace(/\/$/, '');
   return [
     {
       url: base,

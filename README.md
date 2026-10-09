@@ -1,6 +1,6 @@
 # ProofAge — Age Verification Demo (Next.js)
 
-Live demo: **[demo.proofage.xyz](https://demo.proofage.xyz)** &nbsp;·&nbsp; Platform: **[proofage.xyz](https://proofage.xyz)**
+Live demo: **[demo.proofage.net](https://demo.proofage.net)** &nbsp;·&nbsp; Platform: **[proofage.xyz](https://proofage.xyz)**
 
 This repository is a full-stack reference implementation showing how to integrate [ProofAge](https://proofage.xyz) age verification into a Next.js 15 application. The demo renders **Ember Box** — a fictional spirits brand — as a realistic age gate use-case: visitors must verify their age before accessing the site's content.
 
@@ -15,7 +15,7 @@ This repository is a full-stack reference implementation showing how to integrat
 - Gambling and gaming sites
 - Age-restricted subscriptions and memberships
 
-See the full platform at [proofage.xyz](https://proofage.xyz) and the live demo at [demo.proofage.xyz](https://demo.proofage.xyz).
+See the full platform at [proofage.xyz](https://proofage.xyz) and the live demo at [demo.proofage.net](https://demo.proofage.net).
 
 ---
 
@@ -71,9 +71,9 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 PROOFAGE_DEMO_WORKSPACES={"ember-box":{"apiKey":"pk_test_...","secretKey":"sk_test_..."},"eudi-wallet":{"apiKey":"pk_test_...","secretKey":"sk_test_..."}}
 
 # Defaults baked into the code — only override for local dev or custom deployments:
-# NEXT_PUBLIC_PROOFAGE_API_URL=https://api.proofage.xyz/v1
-# NEXT_PUBLIC_PROOFAGE_SDK_URL=https://app.proofage.xyz/sdk-build/kyc-loader.js
-# PROOFAGE_BASE_URL=https://api.proofage.xyz
+# NEXT_PUBLIC_PROOFAGE_API_URL=https://api.proofage.net/v1
+# NEXT_PUBLIC_PROOFAGE_SDK_URL=https://app.proofage.net/sdk-build/kyc-loader.js
+# PROOFAGE_BASE_URL=https://api.proofage.net
 ```
 
 Each demo page has its own workspace; add an entry to `PROOFAGE_DEMO_WORKSPACES` and a page to add a demo.
@@ -114,7 +114,7 @@ vercel
 
 Or connect the repository in the [Vercel dashboard](https://vercel.com). Set the same environment variables in **Project Settings → Environment Variables**, then:
 
-- Set `NEXT_PUBLIC_SITE_URL` to your production URL (e.g. `https://demo.proofage.xyz`)
+- Set `NEXT_PUBLIC_SITE_URL` to your production URL (e.g. `https://demo.proofage.net`)
 - In your [ProofAge dashboard](https://proofage.xyz), configure the webhook URL to `https://your-domain/api/webhooks/proofage`
 
 ---
@@ -147,7 +147,7 @@ lib/
 ## Related
 
 - [ProofAge platform](https://proofage.xyz) — sign up, manage workspaces, view verification logs
-- [Live demo](https://demo.proofage.xyz) — see this code running in production
+- [Live demo](https://demo.proofage.net) — see this code running in production
 - [ProofAge Node.js SDK](https://proofage.xyz) — `@proofage/node` on npm
 
 ### Integrations for other platforms
