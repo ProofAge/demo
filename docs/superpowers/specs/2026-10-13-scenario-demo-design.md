@@ -64,20 +64,42 @@ to it land on the general flow.
 
 ## Workspaces
 
-All three workspaces live in **one dedicated demo tenant**, separate from the
-Shopify app and every customer (the face blocklist is shared across a
-tenant's workspaces; a customer must never see demo faces).
+The demo workspaces live in the **IT Brains tenant** (ProofAge's own), not
+in a customer's or the Shopify app's tenant. As of 13 Oct it already has:
 
-| Slug | Check | Mode | Notes |
+| Workspace | Id | Today |
+|---|---|---|
+| EUDI Wallet [DEMO] (`ewallet`) | `01a0eed6-610b-73b2-94d0-117ec4a8455b` | live, age estimation; the `eudi-wallet` slug, unchanged |
+| ProofAge ID Verification [DEMO] (`demo-proofage-estimation`) | `019d4851-596a-709a-8f9f-fc6d03883862` | live, age by document, threshold 18; Ember Box's `ember-box` slug |
+
+Two workspaces are created for this change (live, plus a test twin of each
+for development):
+
+| Slug | Name | Check | Settings |
 |---|---|---|---|
-| `kyc` | Identity verification (KYC) | Protected | Duplicate detection on; returns all eleven document fields |
-| `age-selfie` | Facial age check, threshold 18 | Private | Falls back to ID if inconclusive (then only the four base fields exist) |
-| `eudi-wallet` | Wallet age check (beta) | Private | The existing workspace, unchanged |
+| `kyc` | KYC [DEMO] | Identity verification (KYC), `flow_type: kyc` | Protected mode; `allow_duplicate_accounts: true`, so a second check by the same person is **approved with the duplicate flag**, not declined; all eleven document fields |
+| `age-selfie` | Facial age [DEMO] | Facial age check, `age_mode: estimation`, threshold 18 | Private mode; falls back to an ID when inconclusive (then the four base document fields) |
+
+`ProofAge ID Verification [DEMO]` is suspended once no session is in flight
+(24 hours after deploy; a live workspace can only be suspended after 24 hours
+without a new verification).
+
+The tenant also holds production workspaces (KYC Live, Age Estimation,
+Monitoring). **The face blocklist is shared by every workspace in a tenant**,
+so a face blocked while recording the video is blocked there too: the
+recording checklist ends with unblocking it.
 
 `PROOFAGE_DEMO_WORKSPACES` gets `kyc`, `age-selfie` and `eudi-wallet`;
 `ember-box` is removed. Each workspace's `webhook_url` is
-`https://demo.proofage.net/api/webhooks/proofage`. The parsing code
-(`lib/demo-workspaces.ts`) does not change.
+`https://demo.proofage.net/api/webhooks/proofage` (already set on the two
+existing ones). The parsing code (`lib/demo-workspaces.ts`) does not change.
+
+**Cost and abuse.** Live sessions are billed once submitted, so the session
+route limits starts to **5 per visitor cookie and 20 per IP per day**
+(counters in the same KV store, IP stored only as a salted hash, 24 h TTL).
+Over the limit, the start button is replaced by "You've reached today's demo
+limit. Watch the video, or try the sample data." Sample data is never
+limited.
 
 ## Scenario config
 
@@ -100,7 +122,6 @@ type Scenario = {
   after: {
     approved: string;               // may contain {firstName}
     declined: string;
-    review: string | null;          // null: not applicable
   };
   note: string | null;              // the one-line "Extra" from the table below
   siteUrl: string;                  // matching page on proofage.net
@@ -109,7 +130,9 @@ type Scenario = {
 ```
 
 The four card components are small presentational components
-(`components/cards/*`) taking `{ state, firstName, verifiedAt }`. They render
+(`components/cards/*`) taking `{ state, firstName, verifiedAt }`, where
+`state` is `idle | running | approved | declined`. ProofAge has no manual
+review step, so there is no "pending review" card state. They render
 neutral placeholders ("Your platform", "Camera kit, 3 days"), never a brand.
 
 ### Scenario copy
@@ -120,7 +143,6 @@ neutral placeholders ("Your platform", "Camera kit, 3 days"), never a brand.
 | Before | Course progress: "Final assessment passed. Confirm your identity to receive your certificate." | Provider profile (sitter or seller), no badge: "Verify your ID to get the Verified badge." | Booking summary (camera kit, dates): "Confirm your identity before pickup." | Cart with one 18+ item: "Confirm you are over 18 to continue." |
 | After, approved | Certificate preview with the first name from the document, "Identity verified" and the date | Profile with an "ID verified" badge and the first name | "Booking confirmed. Renter verified", first name shown | "Age confirmed. Continue to payment" |
 | After, declined | "Certificate on hold: identity not confirmed" | "Badge not granted" | "Booking on hold: identity not confirmed" | "We could not confirm your age. Checkout blocked" |
-| After, review | "Certificate pending manual review" | "Badge pending manual review" | "Booking pending manual review" | not applicable |
 | Note | — | "Banned users are recognised by face on a new account. See the video." | "US and Canadian driving licences: the barcode is read and checked against the front." | "If the selfie is inconclusive, the check falls back to an ID at no extra cost." |
 | Extra action | — | — | — | "Use EUDI Wallet instead (beta)" → `/eudi-wallet-age-verification` |
 | Site link | proofage.net/online-courses | proofage.net/marketplaces | proofage.net/rental-and-sharing | proofage.net/age-restricted-ecommerce |
@@ -198,16 +220,18 @@ The panel shows the **decision webhook as the demo server received it**.
 1. `POST /api/webhooks/proofage` verifies the signature with
    `webhookHandler` (unchanged), then stores the payload in a KV store
    keyed by `verification_id`, **TTL 1 hour**, together with the receipt
-   time and the names of the three signature headers it checked
-   (`X-Auth-Client`, `X-HMAC-Signature`, `X-Timestamp`).
+   time and the signature headers it checked (`X-Auth-Client`,
+   `X-HMAC-Signature`, `X-Timestamp`) plus `X-ProofAge-Webhook-Delivery-Id`.
 2. Payloads are **never logged**. The existing log line keeps
    `slug`, `verification_id` and `status` only.
 3. `GET /api/demo-session` reads the stored payload for the session's
    verification **only after** the existing `external_id === visitor`
    check, and returns it with the view.
-4. Several webhooks can arrive for one verification (`review`, then a
-   decision; a resubmission). The key holds the latest one; a short list of
-   `{status, receivedAt}` is kept alongside for the timing line.
+4. Only `event: status.updated` (or no `event`, for old retries) is stored;
+   `data.updated` (a console correction) is acknowledged and ignored. One
+   verification can send several events (`resubmission_requested`, then a
+   decision); the key holds the latest, and a short list of
+   `{status, timestamp}` is kept alongside.
 
 KV: Upstash Redis through the Vercel Marketplace integration
 (`KV_REST_API_URL`, `KV_REST_API_TOKEN`), via `@upstash/redis`. If the
@@ -217,21 +241,44 @@ storage is not configured on this deployment."
 
 ### What the panel shows
 
-1. **Summary line:** Approved / Declined / Needs review / Resubmission
-   requested, the `reason` code if any, and:
+1. **Summary line:** Approved / Declined / Resubmission requested, the
+   `reason` code if any, and:
    - age threshold: for `age-selfie` and `eudi-wallet`, "Over 18" when
-     approved, "Not confirmed" when declined (an approved age check means
-     the threshold passed);
+     approved; "Under the age threshold" for
+     `verification.age_threshold.failed`;
    - duplicate: from `duplicate_detected` / `duplicate_count`;
-   - face blocklist: from the `reason` code (see open question 3).
-2. **Timing:** "Decision in N s", measured from `consent_accepted_at`
-   (from `GET /v1/verifications/{id}`) to the decision webhook's
-   `timestamp`. Consent is the closest timestamp to "the person started";
-   `created_at` would also count the time spent reading the page. The
-   label says exactly that: "From consent to decision". See open question 4.
-3. **Signature:** "Signature valid" and the three header names. Only
+   - blocklist: "Face blocklist match" for `aml.blocklist.face_match`,
+     "Device blocklist match" for `aml.blocklist.device_match` (codes from
+     docs.proofage.net/core-technology/decision-reasons). The label is ours;
+     the JSON shows the code as sent.
+   - Any other `reason` is shown as the code with its meaning from a small
+     map of the codes a demo visitor is likely to hit (face mismatch,
+     liveness, blur, glare, attempts exhausted); unknown codes show the code
+     alone.
+2. **Timing:** "Decision in N s after submission": from the moment the
+   person submitted (`submitted_at`) to the decision webhook's `timestamp`.
+   The time the person spends taking photos is not counted.
+   - **Prerequisite (web-app repo):** the API has no `submitted_at` today
+     (not in `GET /v1/verifications/{id}`, not in the webhook; checked
+     against the OpenAPI document on 13 Oct). Add `submitted_at` (nullable,
+     ISO 8601) to the verification resource, set when the verification
+     moves to `submitted`, and document it. Useful to customers too.
+   - **Until it ships:** the demo records the submission time itself. While
+     a check is running the page polls `GET /api/demo-session` every
+     second; the first response with status `submitted` stores
+     `submittedSeenAt` in KV next to the payload. The line then reads
+     "Decision in about N s after submission" (accurate to about a
+     second). Once `submitted_at` exists in the API, it is used instead and
+     "about" goes.
+   - If neither is available (the page was closed during submission), the
+     timing line is hidden rather than counting from consent.
+3. **Review status.** ProofAge has no manual review step in production, so
+   the demo has no Needs review screen and no founder alert. `review` can
+   still arrive from a **test** workspace (a test submission stops there);
+   the page treats it like `submitted`: still checking, keep polling.
+4. **Signature:** "Signature valid" and the three header names. Only
    verified payloads are ever stored, so an unsigned payload cannot appear.
-4. **JSON:** the payload, formatted, with:
+5. **JSON:** the payload, formatted, with:
    - `document.fields.document_number` and `document.fields.address`
      masked by default (`•••• 4821`, `•••••`), with a "Reveal" toggle and
      the note "The API returns these in full." The full values reach the
@@ -245,20 +292,9 @@ storage is not configured on this deployment."
      first, middle and last name, date of birth, place of birth and the
      document number before the payload leaves the server, and the Reveal
      toggle is hidden. The After cards then show "Alex" as the name.
-5. **Duplicate line:** when `duplicate_detected` is set and `duplicate_of`
+6. **Duplicate line:** when `duplicate_detected` is set and `duplicate_of`
    belongs to this visitor: "We recognised your face from your previous
    check. This is duplicate detection."
-6. **Needs review:** "In production, your team would review this in the
-   dashboard. This is the Needs review webhook you would receive." The page
-   keeps polling for up to 10 minutes. The founders are notified (see below).
-
-### Founder notification on review
-
-When a `review` webhook arrives for `kyc`, the webhook route sends one
-message to the founders so they can resolve it from the console:
-`DEMO_REVIEW_NOTIFY_URL` (a Slack or Telegram-bot webhook URL) receives
-"Demo verification {id} needs review: {console link}". No personal data in
-the message. If the variable is unset, nothing is sent. See open question 5.
 
 ## Sample data
 
@@ -398,13 +434,17 @@ by".
 
 - Unit (`node --test`, pure modules):
   - scenario config: every scenario has all fields, paths are unique, the
-    workspace is one of the configured ones, `review: null` only on `store`;
+    workspace is one of the configured ones;
   - session cookie: `page` must be a known page; a page/workspace pair not
     allowed by the config is rejected;
   - payload redaction: masking by default, `DEMO_MASK_ALL`,
     `fingerprint_signals` removed, `duplicate_of` hidden unless it is the
     visitor's own;
-  - timing: consent → decision in seconds, missing timestamps give `null`;
+  - timing: `submitted_at` (or `submittedSeenAt`) → decision in seconds,
+    "about" only for the demo-side value, missing timestamps give `null`;
+  - reason labels: both blocklist codes and `verification.age_threshold.failed`
+    map to their labels, an unknown code passes through unlabelled;
+  - daily limits: visitor and IP counters, over-limit answer;
   - the GitHub line-range constant still points at the `create(` call.
 - `tsc --noEmit`, ESLint, `next build`.
 - Webhook route: replay a real test-workspace delivery against the local
@@ -412,8 +452,8 @@ by".
   written to logs except slug, id, status).
 - End to end on a preview deployment with **test** workspaces: one widget
   pass per workspace, then `set-test-verification-outcome` for approved,
-  declined and resubmission; review is checked on the way (a test
-  submission stops in review). Check: in-place result on each page, the
+  declined and resubmission (a test submission stops in `review` first,
+  which the page must show as still checking). Check: in-place result on each page, the
   After card states, the panel, the phone handoff from desktop, sample
   mode, and `/result` redirecting back to the right page.
 - After switching to live keys, one real pass per workspace by the founder.
@@ -421,18 +461,19 @@ by".
 
 ## Rollout
 
-1. Create the demo tenant and the `kyc` and `age-selfie` workspaces (test
-   first, then live), with `webhook_url` set. Live secret keys are copied
-   by a person from the console.
-2. Add the Upstash integration in Vercel; add `PROOFAGE_DEMO_WORKSPACES`
-   with the three slugs, `DEMO_MASK_ALL=false`, and optionally
-   `DEMO_REVIEW_NOTIFY_URL`.
-3. Merge; Vercel deploys.
-4. Founder records the videos (checklist below) with `DEMO_MASK_ALL=true`
+1. Web-app repo: add `submitted_at` to the verification resource (can ship
+   after the demo; the demo falls back to its own measurement).
+2. In the IT Brains tenant, create `KYC [DEMO]` and `Facial age [DEMO]`
+   (test twins first, then live), with `webhook_url` set. Live secret keys
+   are copied by a person from the console.
+3. Add the Upstash integration in Vercel; add `PROOFAGE_DEMO_WORKSPACES`
+   with the three slugs and `DEMO_MASK_ALL=false`.
+4. Merge; Vercel deploys.
+5. Founder records the videos (checklist below) with `DEMO_MASK_ALL=true`
    on a preview deployment, then sets `DEMO_VIDEO_MAIN` / `DEMO_VIDEO_SHORT`.
-5. Site repo: "Try the live demo" links per the brief's table.
-6. Retire the `ember-box` workspace once no in-flight sessions remain
-   (24 hours after deploy).
+6. Site repo: "Try the live demo" links per the brief's table.
+7. Suspend `ProofAge ID Verification [DEMO]` (the old `ember-box`
+   workspace) 24 hours after deploy.
 
 ## Recording checklist (founder, not code)
 
@@ -440,10 +481,11 @@ by".
 - Main video, about 2 minutes: (1) founder on camera, then the ID check on a
   phone from Start to decision without cuts; (2) the panel: decision, time,
   JSON; (3) dashboard: open the verification, "Block this face"; (4) a new
-  check with the same face → declined with the blocklist reason and the
-  duplicate match; (5) dashboard: the blocklist, then unblock.
+  check with the same face → declined with `aml.blocklist.face_match`
+  and the duplicate match; (5) dashboard: the blocklist, then unblock.
 - Short cut, 60 s: chapters 1–2.
-- After recording: unblock the face, and erase the recording verifications'
+- After recording: **unblock the face** (the blocklist is shared with the
+  tenant's production workspaces) and erase the recording verifications'
   personal data from the console.
 
 ## Open questions
@@ -454,16 +496,19 @@ by".
    polling.
 2. **Privacy policy.** Does proofage.net/privacy cover the "demo" purpose
    (ProofAge as controller)? Needed before the live keys go in.
-3. **Blocklist reason code.** Which `reason` value does a decline caused by a
-   face blocklist match carry? Until confirmed, the panel shows the raw code
-   and does not label it as a blocklist match.
-4. **Timing.** Is there a better start timestamp than `consent_accepted_at`
-   (e.g. a `submitted` time) available from the API or the webhook? If so,
-   show "submitted → decision" as the processing time.
-5. **Review notification.** Slack, Telegram or email for the founders'
-   review alert? The spec assumes an incoming-webhook URL.
-6. **Retention line.** Is "Images are kept 30 days and a face template 12
+3. **Retention line.** Is "Images are kept 30 days and a face template 12
    months; write to support@proofage.net to delete sooner" acceptable as the
    KYC promise, given erasure is manual?
-7. **Old links.** Do YouTube descriptions, the Shopify listing or the docs
+4. **Old links.** Do YouTube descriptions, the Shopify listing or the docs
    point at Ember Box URLs other than `/`, or describe the store in text?
+5. **Daily limits.** Are 5 checks per visitor and 20 per IP a day right for
+   a live, billed demo?
+
+## Settled on 13 Oct
+
+- Timing is measured from submission, not from consent: the API gets
+  `submitted_at`; until then the demo measures it.
+- No manual review in production: no Needs review screen or alert.
+- Blocklist decline codes: `aml.blocklist.face_match`,
+  `aml.blocklist.device_match` (docs: Decision reasons).
+- Workspaces live in the IT Brains tenant next to the existing demo ones.
