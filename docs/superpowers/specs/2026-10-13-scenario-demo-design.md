@@ -45,11 +45,11 @@ declined, the dashboard) is shown in the video, not built.
 
 | Route | What it is | Workspace slug |
 |---|---|---|
-| `/` | General flow, both checks | `age-selfie` and `kyc` |
-| `/courses` | Scenario: course certificate | `kyc` |
-| `/marketplaces` | Scenario: provider profile badge | `kyc` |
-| `/rental` | Scenario: rental booking | `kyc` |
-| `/store` | Scenario: age-restricted checkout | `age-selfie` |
+| `/` | General flow, both checks | `eudi-wallet` (selfie) and `id-document` |
+| `/courses` | Scenario: course certificate | `id-document` |
+| `/marketplaces` | Scenario: provider profile badge | `id-document` |
+| `/rental` | Scenario: rental booking | `id-document` |
+| `/store` | Scenario: age-restricted checkout | `eudi-wallet` (selfie) |
 | `/eudi-wallet-age-verification` | Existing EUDI page, new chrome | `eudi-wallet` |
 | `/result` | Kept only as a resolver: redirects to the page stored in the session cookie, else `/` | — |
 | `/e-wallet` | Existing 301 to the EUDI page | — |
@@ -64,42 +64,38 @@ to it land on the general flow.
 
 ## Workspaces
 
-The demo workspaces live in the **IT Brains tenant** (ProofAge's own), not
-in a customer's or the Shopify app's tenant. As of 13 Oct it already has:
+No new workspaces. The demo reuses the two demo workspaces that already exist
+in the IT Brains tenant, both live, both with `webhook_url` set to
+`https://demo.proofage.net/api/webhooks/proofage` and
+`allow_duplicate_accounts: true` (a repeat check is **approved with the
+duplicate flag**, not declined):
 
-| Workspace | Id | Today |
-|---|---|---|
-| EUDI Wallet [DEMO] (`ewallet`) | `01a0eed6-610b-73b2-94d0-117ec4a8455b` | live, age estimation; the `eudi-wallet` slug, unchanged |
-| ProofAge ID Verification [DEMO] (`demo-proofage-estimation`) | `019d4851-596a-709a-8f9f-fc6d03883862` | live, age by document, threshold 18; Ember Box's `ember-box` slug |
+| Env slug | Workspace | Id | Check | Used for |
+|---|---|---|---|---|
+| `id-document` | ProofAge ID Verification [DEMO] | `019d4851-596a-709a-8f9f-fc6d03883862` | Age verification by ID (`age_mode: document_verification`, threshold 18) | The ID check on `/`, `/courses`, `/marketplaces`, `/rental` |
+| `eudi-wallet` | EUDI Wallet [DEMO] | `01a0eed6-610b-73b2-94d0-117ec4a8455b` | Facial age check (`age_mode: estimation`, threshold 18) | The selfie check on `/` and `/store` (widget opened without `method`), and the EUDI page (`method: 'wallet'`) |
 
-Two workspaces are created for this change (live, plus a test twin of each
-for development):
+Consequences:
 
-| Slug | Name | Check | Settings |
-|---|---|---|---|
-| `kyc` | KYC [DEMO] | Identity verification (KYC), `flow_type: kyc` | Protected mode; `allow_duplicate_accounts: true`, so a second check by the same person is **approved with the duplicate flag**, not declined; all eleven document fields |
-| `age-selfie` | Facial age [DEMO] | Facial age check, `age_mode: estimation`, threshold 18 | Private mode; falls back to an ID when inconclusive (then the four base document fields) |
-
-`ProofAge ID Verification [DEMO]` is suspended once no session is in flight
-(24 hours after deploy; a live workspace can only be suspended after 24 hours
-without a new verification).
-
-The tenant also holds production workspaces (KYC Live, Age Estimation,
-Monitoring). **The face blocklist is shared by every workspace in a tenant**,
-so a face blocked while recording the video is blocked there too: the
-recording checklist ends with unblocking it.
-
-`PROOFAGE_DEMO_WORKSPACES` gets `kyc`, `age-selfie` and `eudi-wallet`;
-`ember-box` is removed. Each workspace's `webhook_url` is
-`https://demo.proofage.net/api/webhooks/proofage` (already set on the two
-existing ones). The parsing code (`lib/demo-workspaces.ts`) does not change.
-
-**Cost and abuse.** Live sessions are billed once submitted, so the session
-route limits starts to **5 per visitor cookie and 20 per IP per day**
-(counters in the same KV store, IP stored only as a salted hash, 24 h TTL).
-Over the limit, the start button is replaced by "You've reached today's demo
-limit. Watch the video, or try the sample data." Sample data is never
-limited.
+- **The ID check returns four document fields**, not eleven: `first_name`,
+  `last_name`, `date_of_birth`, `document_number` (age workspaces; see the
+  webhook schema). That is enough for every After card (first name only).
+  The page calls it **"ID check"**, not "Identity verification (KYC)", and
+  the panel says under the JSON: "This demo runs Age verification by ID. An
+  Identity verification (KYC) workspace also returns nationality, address,
+  issue and expiry dates, and more." A dedicated KYC workspace can replace
+  it later by changing one env entry.
+- **One workspace, two checks.** The selfie check and the EUDI page share
+  `eudi-wallet`; what differs is the widget's `method`. The session cookie
+  keeps the page, so results never cross pages.
+- `PROOFAGE_DEMO_WORKSPACES`: the `ember-box` key is renamed `id-document`
+  (same keys, one env edit in Vercel); `eudi-wallet` stays. No secret keys
+  are created or rotated. The webhook route keeps matching by public key,
+  which works because each workspace appears once in the map.
+- **The face blocklist is shared by every workspace in the tenant**,
+  including production ones (KYC Live, Age Estimation, Monitoring). A face
+  blocked while recording the video is blocked there too: the recording
+  checklist ends with unblocking it.
 
 ## Scenario config
 
@@ -113,7 +109,7 @@ type Scenario = {
   slug: ScenarioSlug;
   path: `/${string}`;
   navLabel: string;                 // "Online courses"
-  workspace: 'kyc' | 'age-selfie';
+  workspace: 'id-document' | 'eudi-wallet';
   meta: { title: string; description: string };
   h1: string;
   lead: string;                     // one line under the H1
@@ -243,7 +239,7 @@ storage is not configured on this deployment."
 
 1. **Summary line:** Approved / Declined / Resubmission requested, the
    `reason` code if any, and:
-   - age threshold: for `age-selfie` and `eudi-wallet`, "Over 18" when
+   - age threshold: for both workspaces (both are age checks, threshold 18), "Over 18" when
      approved; "Under the age threshold" for
      `verification.age_threshold.failed`;
    - duplicate: from `duplicate_detected` / `duplicate_count`;
@@ -279,8 +275,8 @@ storage is not configured on this deployment."
 4. **Signature:** "Signature valid" and the three header names. Only
    verified payloads are ever stored, so an unsigned payload cannot appear.
 5. **JSON:** the payload, formatted, with:
-   - `document.fields.document_number` and `document.fields.address`
-     masked by default (`•••• 4821`, `•••••`), with a "Reveal" toggle and
+   - `document.fields.document_number` (and `address`, if a KYC
+     workspace is ever plugged in) masked by default (`•••• 4821`), with a "Reveal" toggle and
      the note "The API returns these in full." The full values reach the
      browser only for the visitor's own verification;
    - `fingerprint_signals` replaced by `"(omitted in the demo: IP and
@@ -303,10 +299,10 @@ result with sample data"**.
 
 - No verification is created and no request leaves the browser except
   loading the fixture.
-- Fixtures live in `lib/sample-payloads.ts`: one approved KYC payload
-  (name "Alex Sample", a fictional document with an obviously fake number,
-  `issuing_country: "FR"`), one approved age payload without document
-  fields, plus a declined variant of each for the "Try a declined result"
+- Fixtures live in `lib/sample-payloads.ts`: one approved ID-check payload
+  (the four age-workspace fields: name "Alex Sample", a date of birth, an
+  obviously fake document number; `issuing_country: "FR"`), one approved
+  selfie payload without document fields, plus a declined variant of each for the "Try a declined result"
   link. Shape is `WebhookPayload` from `@proofage/node`, so a type change in
   the SDK breaks the build, not the page.
 - The After card and the panel are filled from the fixture with a visible
@@ -329,7 +325,7 @@ On `/`, no sample button: the video plays that role there.
 4. "Try it yourself": two columns, stacked on mobile.
    - Selfie age check — "Nothing to upload, about 10 seconds" — "Start
      selfie check" (primary).
-   - ID check (KYC) — "You need an ID document and about a minute" — "Start
+   - ID check — "You need an ID document and about a minute" — "Start
      ID check" (secondary); under it "Don't want to use your own ID? The
      video above shows the whole check."
 5. What your system receives.
@@ -444,7 +440,6 @@ by".
     "about" only for the demo-side value, missing timestamps give `null`;
   - reason labels: both blocklist codes and `verification.age_threshold.failed`
     map to their labels, an unknown code passes through unlabelled;
-  - daily limits: visitor and IP counters, over-limit answer;
   - the GitHub line-range constant still points at the `create(` call.
 - `tsc --noEmit`, ESLint, `next build`.
 - Webhook route: replay a real test-workspace delivery against the local
@@ -463,17 +458,13 @@ by".
 
 1. Web-app repo: add `submitted_at` to the verification resource (can ship
    after the demo; the demo falls back to its own measurement).
-2. In the IT Brains tenant, create `KYC [DEMO]` and `Facial age [DEMO]`
-   (test twins first, then live), with `webhook_url` set. Live secret keys
-   are copied by a person from the console.
-3. Add the Upstash integration in Vercel; add `PROOFAGE_DEMO_WORKSPACES`
-   with the three slugs and `DEMO_MASK_ALL=false`.
+2. In Vercel, rename the `ember-box` key of `PROOFAGE_DEMO_WORKSPACES` to
+   `id-document` together with the deploy (same keys).
+3. Add the Upstash integration in Vercel and `DEMO_MASK_ALL=false`.
 4. Merge; Vercel deploys.
 5. Founder records the videos (checklist below) with `DEMO_MASK_ALL=true`
    on a preview deployment, then sets `DEMO_VIDEO_MAIN` / `DEMO_VIDEO_SHORT`.
 6. Site repo: "Try the live demo" links per the brief's table.
-7. Suspend `ProofAge ID Verification [DEMO]` (the old `ember-box`
-   workspace) 24 hours after deploy.
 
 ## Recording checklist (founder, not code)
 
@@ -490,19 +481,23 @@ by".
 
 ## Open questions
 
-1. **Phone handoff.** Does the widget show its QR handoff for both `kyc` and
-   `age-selfie` in popup mode on desktop? If not, we add our own QR (the
+1. **Phone handoff.** Does the widget show its QR handoff for both demo
+   workspaces in popup mode on desktop? If not, we add our own QR (the
    `url` from create) with a "Continue on your phone" caption, and keep
    polling.
 2. **Privacy policy.** Does proofage.net/privacy cover the "demo" purpose
    (ProofAge as controller)? Needed before the live keys go in.
-3. **Retention line.** Is "Images are kept 30 days and a face template 12
-   months; write to support@proofage.net to delete sooner" acceptable as the
-   KYC promise, given erasure is manual?
+3. **Retention lines.** The texts next to the start buttons ("deleted right
+   after the decision" for the selfie, "kept 30 days, face template 12
+   months" for the ID check) were written for Private and Protected modes.
+   They must match the privacy mode actually set on the two reused
+   workspaces; which mode is each one in?
 4. **Old links.** Do YouTube descriptions, the Shopify listing or the docs
    point at Ember Box URLs other than `/`, or describe the store in text?
-5. **Daily limits.** Are 5 checks per visitor and 20 per IP a day right for
-   a live, billed demo?
+5. **EUDI workspace redirect.** EUDI Wallet [DEMO] has
+   `redirect_url: https://proofage.xyz/get-verified`. Every demo session
+   sends its own `callback_url`, so it should not matter; change it to
+   `.net` anyway (a live-workspace change, confirmed by the owner)?
 
 ## Settled on 13 Oct
 
@@ -511,4 +506,5 @@ by".
 - No manual review in production: no Needs review screen or alert.
 - Blocklist decline codes: `aml.blocklist.face_match`,
   `aml.blocklist.device_match` (docs: Decision reasons).
-- Workspaces live in the IT Brains tenant next to the existing demo ones.
+- Reuse the two existing demo workspaces; no new ones for now.
+- No daily limits on live checks.
