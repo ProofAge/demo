@@ -1,21 +1,21 @@
 # ProofAge — Age Verification Demo (Next.js)
 
-Live demo: **[demo.proofage.net](https://demo.proofage.net)** &nbsp;·&nbsp; Platform: **[proofage.xyz](https://proofage.xyz)**
+Live demo: **[demo.proofage.net](https://demo.proofage.net)** &nbsp;·&nbsp; Platform: **[proofage.net](https://proofage.net)**
 
-This repository is a full-stack reference implementation showing how to integrate [ProofAge](https://proofage.xyz) age verification into a Next.js 15 application. The demo renders **Ember Box** — a fictional spirits brand — as a realistic age gate use-case: visitors must verify their age before accessing the site's content.
+This repository is a full-stack reference implementation showing how to integrate [ProofAge](https://proofage.net) age verification into a Next.js 15 application. The demo renders **Ember Box** — a fictional spirits brand — as a realistic age gate use-case: visitors must verify their age before accessing the site's content.
 
 ---
 
 ## What is ProofAge?
 
-[ProofAge](https://proofage.xyz) is an online age verification and age gate platform. It lets websites and apps verify that users meet a minimum age requirement (e.g. 18+ or 21+) through a hosted, privacy-safe KYC flow — no server-side handling of identity documents required. It covers use-cases such as:
+[ProofAge](https://proofage.net) is an online age verification and age gate platform. It lets websites and apps verify that users meet a minimum age requirement (e.g. 18+ or 21+) through a hosted, privacy-safe KYC flow — no server-side handling of identity documents required. It covers use-cases such as:
 
 - Alcohol, tobacco, and cannabis e-commerce
 - Adult content platforms
 - Gambling and gaming sites
 - Age-restricted subscriptions and memberships
 
-See the full platform at [proofage.xyz](https://proofage.xyz) and the live demo at [demo.proofage.net](https://demo.proofage.net).
+See the full platform at [proofage.net](https://proofage.net) and the live demo at [demo.proofage.net](https://demo.proofage.net).
 
 ---
 
@@ -38,7 +38,7 @@ See the full platform at [proofage.xyz](https://proofage.xyz) and the live demo 
 - [Next.js 15](https://nextjs.org) (App Router, Turbopack)
 - [React 19](https://react.dev)
 - [Tailwind CSS v4](https://tailwindcss.com)
-- [`@proofage/node`](https://proofage.xyz) — official Node.js SDK for server-side HMAC signing and webhook verification
+- [`@proofage/node`](https://proofage.net) — official Node.js SDK for server-side HMAC signing and webhook verification
 
 ---
 
@@ -58,7 +58,7 @@ npm install
 cp .env.example .env.local
 ```
 
-Fill in your keys from your [ProofAge workspace](https://proofage.xyz):
+Fill in your keys from your [ProofAge workspace](https://proofage.net):
 
 ```env
 # Public URL of this demo (metadata, sitemap, and the /result redirect). No trailing slash.
@@ -78,7 +78,7 @@ PROOFAGE_DEMO_WORKSPACES={"ember-box":{"apiKey":"pk_test_...","secretKey":"sk_te
 
 Each demo page has its own workspace; add an entry to `PROOFAGE_DEMO_WORKSPACES` and a page to add a demo.
 
-Use **test keys** during development. Get them at [proofage.xyz](https://proofage.xyz).
+Use **test keys** during development. Get them at [proofage.net](https://proofage.net).
 
 ### 3. Run the dev server
 
@@ -115,7 +115,7 @@ vercel
 Or connect the repository in the [Vercel dashboard](https://vercel.com). Set the same environment variables in **Project Settings → Environment Variables**, then:
 
 - Set `NEXT_PUBLIC_SITE_URL` to your production URL (e.g. `https://demo.proofage.net`)
-- In your [ProofAge dashboard](https://proofage.xyz), configure the webhook URL to `https://your-domain/api/webhooks/proofage`
+- In your [ProofAge dashboard](https://proofage.net), configure the webhook URL to `https://your-domain/api/webhooks/proofage`
 
 ---
 
@@ -146,9 +146,9 @@ lib/
 
 ## Related
 
-- [ProofAge platform](https://proofage.xyz) — sign up, manage workspaces, view verification logs
+- [ProofAge platform](https://proofage.net) — sign up, manage workspaces, view verification logs
 - [Live demo](https://demo.proofage.net) — see this code running in production
-- [ProofAge Node.js SDK](https://proofage.xyz) — `@proofage/node` on npm
+- [ProofAge Node.js SDK](https://proofage.net) — `@proofage/node` on npm
 
 ### Integrations for other platforms
 

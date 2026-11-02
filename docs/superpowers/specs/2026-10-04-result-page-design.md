@@ -5,7 +5,7 @@ Status: agreed in chat, pending spec review
 
 ## Goal
 
-The demo (demo.proofage.xyz) shows the ProofAge flow but not what the store
+The demo (demo.proofage.net) shows the ProofAge flow but not what the store
 gets from it. After the widget closes, the page says "Age verified" whether
 the person was approved, declined or sent to review, because it reacts to the
 SDK's `onComplete`, which carries no outcome.
@@ -120,7 +120,7 @@ nothing without the matching visitor id, which never leaves the server.
 - `PROOFAGE_API_KEY` and `PROOFAGE_SECRET_KEY` are no longer read anywhere.
 
 Both workspaces get `webhook_url` =
-`https://demo.proofage.xyz/api/webhooks/proofage`. They are live, so the
+`https://demo.proofage.net/api/webhooks/proofage`. They are live, so the
 change is previewed and applied only after the owner agrees.
 
 ## View model
@@ -196,7 +196,7 @@ No other new dependency.
   The same run confirms that in popup mode the overlay closes on completion
   instead of loading `callback_url` inside the iframe, and that a new tab
   lands on `/result` with the cookies (demo and IDV hosts are same-site under
-  `proofage.xyz`, so `SameSite=Lax` cookies are sent).
+  `proofage.net`, so `SameSite=Lax` cookies are sent).
 - After deploy, one real pass on each production page.
 - Lighthouse on `/` and `/eudi-wallet-age-verification` stays at
   Accessibility 100 and SEO 100.

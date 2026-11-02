@@ -56,7 +56,7 @@ export function Hero({ slug, apiUrl, apiKey, sdkUrl, copy, onErrorMessage }: Her
             </div>
             <p className="mt-6 text-center text-[11px] text-ember-smoke">
               Powered by{' '}
-              <a href="https://proofage.xyz" target="_blank" rel="noopener noreferrer" className="text-ember-amber underline underline-offset-4">
+              <a href="https://proofage.net" target="_blank" rel="noopener noreferrer" className="text-ember-amber underline underline-offset-4">
                 ProofAge
               </a>
             </p>

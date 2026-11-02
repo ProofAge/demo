@@ -24,7 +24,7 @@ export function Footer() {
             </Link>
           </nav>
           <a
-            href="https://proofage.xyz"
+            href="https://proofage.net"
             target="_blank"
             rel="noopener noreferrer"
             className="border border-ember-amber/30 bg-ember-amber/10 px-5 py-2 text-[11px] uppercase tracking-[0.2em] text-ember-amber transition hover:bg-ember-amber/20"

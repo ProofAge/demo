@@ -242,7 +242,7 @@ test('isVisitorId rejects anything else', () => {
 });
 
 test('session round-trips', () => {
-  const session = { slug: 'eudi-wallet', verificationId: '01a0-x', url: 'https://idv.proofage.xyz/v/tok' };
+  const session = { slug: 'eudi-wallet', verificationId: '01a0-x', url: 'https://idv.proofage.net/v/tok' };
   assert.deepEqual(parseSession(serializeSession(session)), session);
 });
 
@@ -375,7 +375,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { normaliseFirstName, resultFromVerification, toResultView } from './demo-result.ts';
 
-const URL_ = 'https://idv.proofage.xyz/v/tok';
+const URL_ = 'https://idv.proofage.net/v/tok';
 
 test('maps every API status', () => {
   const cases: Array<[string, string, boolean]> = [
@@ -611,7 +611,7 @@ export function clientFor(slug: string): ProofAgeClient {
     client = new ProofAgeClient({
       apiKey,
       secretKey,
-      baseUrl: process.env.PROOFAGE_BASE_URL ?? 'https://api.proofage.xyz',
+      baseUrl: process.env.PROOFAGE_BASE_URL ?? 'https://api.proofage.net',
       version: 'v1',
     });
     clients.set(slug, client);
@@ -630,7 +630,7 @@ import { normaliseFirstName, resultFromVerification, type LoadedResult } from '@
 import { clientFor, demoWorkspaces } from '@/lib/proofage';
 
 export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demo.proofage.xyz').replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demo.proofage.net').replace(/\/$/, '');
 }
 
 /** What /result shows for this browser. Never throws; API failures become `error`. */
@@ -1351,7 +1351,7 @@ git commit -m "feat: result page with the real outcome"
 
 ```env
 # Public URL of this demo (metadata, sitemap, and the /result redirect). No trailing slash.
-NEXT_PUBLIC_SITE_URL=https://demo.proofage.xyz
+NEXT_PUBLIC_SITE_URL=https://demo.proofage.net
 
 # Server-only: one entry per demo page, keyed by slug. The public key reaches the
 # browser SDK through the page; the secret key signs API calls and verifies webhooks.
@@ -1360,9 +1360,9 @@ NEXT_PUBLIC_SITE_URL=https://demo.proofage.xyz
 PROOFAGE_DEMO_WORKSPACES={"ember-box":{"apiKey":"pk_live_...","secretKey":"sk_live_..."},"eudi-wallet":{"apiKey":"pk_live_...","secretKey":"sk_live_..."}}
 
 # Defaults baked into the code — only override for local dev or custom deployments:
-# NEXT_PUBLIC_PROOFAGE_API_URL=https://api.proofage.xyz/v1
-# NEXT_PUBLIC_PROOFAGE_SDK_URL=https://app.proofage.xyz/sdk-build/kyc-loader.js
-# PROOFAGE_BASE_URL=https://api.proofage.xyz
+# NEXT_PUBLIC_PROOFAGE_API_URL=https://api.proofage.net/v1
+# NEXT_PUBLIC_PROOFAGE_SDK_URL=https://app.proofage.net/sdk-build/kyc-loader.js
+# PROOFAGE_BASE_URL=https://api.proofage.net
 
 # Optional: webhook timestamp tolerance (seconds)
 PROOFAGE_WEBHOOK_TOLERANCE=300
@@ -1388,7 +1388,7 @@ Expected: no output.
 ```bash
 npm test
 npx tsc --noEmit && npx eslint app lib components
-PROOFAGE_DEMO_WORKSPACES='{"ember-box":{"apiKey":"pk_a","secretKey":"sk_a"},"eudi-wallet":{"apiKey":"pk_b","secretKey":"sk_b"}}' NEXT_PUBLIC_SITE_URL=https://demo.proofage.xyz npx next build
+PROOFAGE_DEMO_WORKSPACES='{"ember-box":{"apiKey":"pk_a","secretKey":"sk_a"},"eudi-wallet":{"apiKey":"pk_b","secretKey":"sk_b"}}' NEXT_PUBLIC_SITE_URL=https://demo.proofage.net npx next build
 ```
 
 Expected: all pass.

@@ -48,7 +48,7 @@ const jsonLd = {
       url: `${SITE_URL}${PATH}`,
       about: { '@type': 'Thing', name: 'EU Digital Identity Wallet' },
       isPartOf: { '@type': 'WebSite', name: 'ProofAge Demo', url: SITE_URL },
-      publisher: { '@type': 'Organization', name: 'ProofAge', url: 'https://proofage.xyz' },
+      publisher: { '@type': 'Organization', name: 'ProofAge', url: 'https://proofage.net' },
     },
     {
       '@type': 'BreadcrumbList',

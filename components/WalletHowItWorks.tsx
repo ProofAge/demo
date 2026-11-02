@@ -1,4 +1,4 @@
-const BETA_URL = 'https://proofage.xyz/eudi-wallet-age-verification';
+const BETA_URL = 'https://proofage.net/eudi-wallet-age-verification';
 
 const STEPS = [
   {
