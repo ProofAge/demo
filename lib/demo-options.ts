@@ -2,7 +2,7 @@ import { CHECKS, LOOKS, OPENS, type Check, type Look, type Opens } from './demo-
 
 export type DemoOptions = { check: Check; look: Look; opens: Opens };
 
-export const DEFAULT_OPTIONS: DemoOptions = { check: 'selfie', look: 'proofage', opens: 'popup' };
+export const DEFAULT_OPTIONS: DemoOptions = { check: 'kyc', look: 'proofage', opens: 'popup' };
 
 export const CHECK_LABELS: Record<Check, string> = {
   selfie: 'Selfie age check',

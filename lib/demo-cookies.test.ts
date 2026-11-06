@@ -63,8 +63,8 @@ test('a session belongs to the page it started on', () => {
 });
 
 test('/result sends people back to their page, else to / with a notice', () => {
-  assert.equal(resultRedirectPath(parseSession(serializeSession({ ...BASE }))), '/?check=kyc');
-  assert.equal(resultRedirectPath(parseSession(serializeSession({ ...BASE, slug: 'selfie' }))), '/');
+  assert.equal(resultRedirectPath(parseSession(serializeSession({ ...BASE }))), '/');
+  assert.equal(resultRedirectPath(parseSession(serializeSession({ ...BASE, slug: 'selfie' }))), '/?check=selfie');
   assert.equal(resultRedirectPath(parseSession(serializeSession({ ...BASE, slug: 'age-id-lumo' }))), '/?check=age-id&look=lumo');
   assert.equal(
     resultRedirectPath(parseSession(serializeSession({ ...BASE, slug: 'eudi-wallet', page: '/eudi-wallet-age-verification' }))),

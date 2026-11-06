@@ -4,7 +4,7 @@ import { CHECKS, LOOKS, OPENS } from './demo-pages.ts';
 import { CHECK_LABELS, DEFAULT_OPTIONS, LOOK_LINE, optionsQuery, parseOptions } from './demo-options.ts';
 
 test('defaults', () => {
-  assert.deepEqual(DEFAULT_OPTIONS, { check: 'selfie', look: 'proofage', opens: 'popup' });
+  assert.deepEqual(DEFAULT_OPTIONS, { check: 'kyc', look: 'proofage', opens: 'popup' });
   assert.deepEqual(parseOptions({}), DEFAULT_OPTIONS);
 });
 
@@ -20,7 +20,7 @@ test('invalid values are ignored', () => {
 
 test('optionsQuery writes only non-defaults', () => {
   assert.equal(optionsQuery(DEFAULT_OPTIONS), '');
-  assert.equal(optionsQuery({ check: 'kyc', look: 'proofage', opens: 'tab' }), '?check=kyc&open=tab');
+  assert.equal(optionsQuery({ check: 'selfie', look: 'proofage', opens: 'tab' }), '?check=selfie&open=tab');
 });
 
 test('round trip for all 18 combinations', () => {
