@@ -23,6 +23,10 @@ export function parseDemoWorkspaces(raw: string | undefined): DemoWorkspaces {
     if (!keys || typeof keys.apiKey !== 'string' || !keys.apiKey || typeof keys.secretKey !== 'string' || !keys.secretKey) {
       throw new Error(`${WORKSPACES_ENV}["${slug}"] needs non-empty apiKey and secretKey`);
     }
+    // The public key is rendered into the page: a secret key there would let anyone sign API calls.
+    if (keys.apiKey.startsWith('sk_') || keys.apiKey === keys.secretKey) {
+      throw new Error(`${WORKSPACES_ENV}["${slug}"] apiKey must be the public key, not a secret key`);
+    }
     workspaces[slug] = { apiKey: keys.apiKey, secretKey: keys.secretKey };
   }
   return workspaces;

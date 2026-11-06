@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
-import { Storefront } from '@/components/Storefront';
+import { DemoProvider } from '@/components/demo/DemoProvider';
+import { StartArea } from '@/components/flow/StartArea';
+import { ResultArea } from '@/components/result/ResultArea';
+import { SiteShell } from '@/components/SiteShell';
 import { WalletHowItWorks } from '@/components/WalletHowItWorks';
-import { publicKeyFor } from '@/lib/proofage';
+import { EUDI_PATH } from '@/lib/demo-pages';
+import { publicKeysFor } from '@/lib/proofage';
 
-const PATH = '/eudi-wallet-age-verification';
+const PATH = EUDI_PATH;
 const TITLE = 'EUDI Wallet age verification — live demo';
 const DESCRIPTION =
   'Try ProofAge wallet age verification live: prove you are 18+ with the EU age verification app or a compatible digital identity wallet, with a selfie age check as fallback.';
@@ -21,6 +25,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: PATH,
   },
+  // Not linked and not indexed until the page is ready; it still works by its URL.
+  robots: { index: false, follow: false },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
@@ -62,27 +68,21 @@ const jsonLd = {
 
 export default function EudiWalletPage() {
   return (
-    <>
+    <SiteShell>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Storefront
-        slug="eudi-wallet"
-        apiKey={publicKeyFor('eudi-wallet')}
-        copy={{
-          eyebrow: 'Digital ID wallet · Live demo',
-          heading: (
-            <>
-              Prove you are 18+ with your <em className="text-ember-amber-light not-italic">EUDI Wallet</em>
-            </>
-          ),
-          intro:
-            'Ember Box is a fictional storefront. This demo runs the ProofAge wallet age check: share an age proof from your digital identity wallet instead of uploading an ID. No wallet? A selfie age check takes over.',
-          cardTitle: 'Verify with your wallet',
-          cardText:
-            'Works with the EU age verification app and compatible EUDI wallets, on this device or by scanning a QR code. Powered by ProofAge.',
-        }}
-      >
-        <WalletHowItWorks />
-      </Storefront>
-    </>
+      <div className="mx-auto max-w-2xl">
+        <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">Prove you are 18+ with a digital ID wallet</h1>
+        <p className="mt-3 text-body">
+          Share an age proof from your EUDI Wallet instead of uploading an ID. No wallet? A selfie age check takes over. Beta, with test wallet data.
+        </p>
+      </div>
+      <DemoProvider page={PATH} apiKeys={publicKeysFor(PATH)} method="wallet">
+        <div className="mx-auto mt-8 max-w-xl">
+          <StartArea slug="eudi-wallet" opens="popup" check="selfie" idleLabel="Verify with my wallet" footnote={false} sampleLabel="No wallet at hand? See a sample result" />
+        </div>
+        <ResultArea />
+      </DemoProvider>
+      <WalletHowItWorks />
+    </SiteShell>
   );
 }

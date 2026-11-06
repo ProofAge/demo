@@ -1,4 +1,5 @@
 import { ProofAgeClient } from '@proofage/node';
+import { PAGE_WORKSPACES, type DemoPage, type WorkspaceSlug } from '@/lib/demo-pages';
 import { parseDemoWorkspaces, workspaceFor, type DemoWorkspaces } from '@/lib/demo-workspaces';
 
 let workspaces: DemoWorkspaces | null = null;
@@ -28,4 +29,9 @@ export function clientFor(slug: string): ProofAgeClient {
     clients.set(slug, client);
   }
   return client;
+}
+
+/** The public keys a page's browser SDK needs, one per workspace the page may start. */
+export function publicKeysFor(page: DemoPage): Partial<Record<WorkspaceSlug, string>> {
+  return Object.fromEntries(PAGE_WORKSPACES[page].map((slug) => [slug, publicKeyFor(slug)]));
 }

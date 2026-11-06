@@ -11,8 +11,9 @@ import {
   VISITOR_COOKIE,
   VISITOR_MAX_AGE,
 } from '@/lib/demo-cookies';
-import { isDemoSlug } from '@/lib/demo-pages';
+import { isDemoPage, isWorkspaceSlug, pageAllowsWorkspace } from '@/lib/demo-pages';
 import { loadResult } from '@/lib/demo-session';
+import { clientIp, counter, CREATE_LIMIT, CREATE_WINDOW_SECONDS, hit, isSameOrigin } from '@/lib/rate-limit';
 import { clientFor } from '@/lib/proofage';
 
 export const dynamic = 'force-dynamic';
@@ -23,12 +24,17 @@ function isSecure(request: Request): boolean {
 
 /**
  * Creates the verification server-side, so it is HMAC-signed and carries an external_id
- * (the browser SDK's unsigned create drops it). A still-unopened one is reused.
+ * (the browser SDK's unsigned create drops it). A still-unopened one for the same check and
+ * page is reused; starting on another page replaces the session.
  */
 export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json().catch(() => null)) as { slug?: unknown } | null;
+  if (!isSameOrigin(request)) {
+    return NextResponse.json({ error: 'Start the check from the demo page.' }, { status: 403 });
+  }
+  const body = (await request.json().catch(() => null)) as { slug?: unknown; page?: unknown } | null;
   const slug = body?.slug;
-  if (!isDemoSlug(slug)) {
+  const page = body?.page;
+  if (!isWorkspaceSlug(slug) || !isDemoPage(page) || !pageAllowsWorkspace(page, slug)) {
     return NextResponse.json({ error: 'Unknown demo' }, { status: 400 });
   }
 
@@ -40,17 +46,32 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     const client = clientFor(slug);
     const previous = parseSession(store.get(SESSION_COOKIE)?.value);
-    if (previous && previous.slug === slug && visitorId === existingVisitor) {
+    if (previous && previous.slug === slug && previous.page === page && visitorId === existingVisitor) {
       const verification = await client.verifications().find(previous.verificationId).catch(() => null);
       if (verification?.status === 'created' && verification.external_id === visitorId) {
         return NextResponse.json({ url: previous.url });
       }
     }
 
+    // Only new verifications count: reopening an unopened one above is free.
+    const limited = await hit(counter(), {
+      scope: 'create',
+      id: clientIp(request.headers),
+      limit: CREATE_LIMIT,
+      windowSeconds: CREATE_WINDOW_SECONDS,
+      now: Date.now(),
+    }).catch(() => ({ ok: true as const })); // A storage outage must not take the demo down.
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: 'Too many checks from this network. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } },
+      );
+    }
+
     const created = await client.verifications().create({
       external_id: visitorId,
       callback_url: new URL('/result', request.url).toString(),
-      metadata: { demo: slug },
+      external_metadata: { demo: slug, page },
     });
     if (!created?.id || !created.url) {
       throw new Error('create returned no id or url');
@@ -60,7 +81,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     response.cookies.set(VISITOR_COOKIE, visitorId, cookieOptions(VISITOR_MAX_AGE, secure));
     response.cookies.set(
       SESSION_COOKIE,
-      serializeSession({ slug, verificationId: created.id, url: created.url }),
+      serializeSession({ slug, page, verificationId: created.id, url: created.url }),
       cookieOptions(SESSION_MAX_AGE, secure),
     );
     return response;
@@ -73,12 +94,9 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 }
 
-export async function GET(): Promise<NextResponse> {
-  return NextResponse.json(await loadResult(), { headers: { 'Cache-Control': 'no-store' } });
-}
-
-export async function DELETE(request: Request): Promise<NextResponse> {
-  const response = new NextResponse(null, { status: 204 });
-  response.cookies.set(SESSION_COOKIE, '', cookieOptions(0, isSecure(request)));
-  return response;
+/** The result for the page that asks (`?page=`); anything else is no session. */
+export async function GET(request: Request): Promise<NextResponse> {
+  const page = new URL(request.url).searchParams.get('page');
+  const result = isDemoPage(page) ? await loadResult(page) : { kind: 'no_session' as const };
+  return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
 }

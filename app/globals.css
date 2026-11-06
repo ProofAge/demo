@@ -1,80 +1,102 @@
 @import 'tailwindcss';
 
-@theme {
-  --font-display: var(--font-cormorant), ui-serif, Georgia, serif;
-  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+/* The ProofAge console's tokens (proofageapp resources/css/brand/tokens.css), dark values under prefers-color-scheme. */
+@theme inline {
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --color-ember-cream: #f5f0e8;
-  --color-ember-dark: #1a1410;
-  --color-ember-brown: #3d2b1f;
-  --color-ember-amber: #c8862a;
-  --color-ember-amber-light: #e8a84a;
-  --color-ember-smoke: #a09080;
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-control: var(--control-border);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-tint: var(--accent-tint);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--ok);
+  --color-ok-tint: var(--ok-tint);
+  --color-warn: var(--warn);
+  --color-warn-tint: var(--warn-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-inverse: var(--inverse);
+  --color-on-inverse: var(--on-inverse);
+  --color-inverse-line: var(--inverse-line);
 
-  --animate-fade-up: fade-up 0.8s ease-out both;
-  --animate-fade-in: fade-in 0.6s ease-out both;
-  --animate-scale-in: scale-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  --animate-float: float 6s ease-in-out infinite;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --shadow-float: 0 4px 12px rgb(15 26 22 / 0.08);
 }
 
-html {
-  overflow-x: hidden;
+:root {
+  color-scheme: light dark;
+  --paper: #f7f8f5;
+  --surface: #ffffff;
+  --sunken: #eef1ec;
+  --ink: #0f1a16;
+  --body: #2c3833;
+  --muted: #56635d;
+  --line: #dce1db;
+  --line-strong: #bcc5be;
+  --control-border: #87928c;
+  --accent: #0b6e4f;
+  --accent-strong: #085a40;
+  --accent-tint: #e2f0ea;
+  --on-accent: #ffffff;
+  --ok: #0b6e4f;
+  --ok-tint: #e2f0ea;
+  --warn: #8a5a00;
+  --warn-tint: #fbf1d9;
+  --danger: #b3261e;
+  --danger-tint: #fbe9e7;
+  --inverse: #0f1a16;
+  --on-inverse: #e9eeea;
+  --inverse-line: #2a3832;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0f1a16;
+    --surface: #16211c;
+    --sunken: #1f2c26;
+    --ink: #e9eeea;
+    --body: #c8d1cb;
+    --muted: #9daaa3;
+    --line: #2a3832;
+    --line-strong: #3b4a43;
+    --control-border: #78857e;
+    --accent: #64a687;
+    --accent-strong: #80b99c;
+    --accent-tint: #1c3329;
+    --on-accent: #0f1a16;
+    --ok: #64a687;
+    --ok-tint: #1c3329;
+    --warn: #d6a54a;
+    --warn-tint: #33280f;
+    --danger: #ec8a80;
+    --danger-tint: #3a1d1a;
+    --inverse: #0a110e;
+  }
 }
 
 body {
-  @apply bg-ember-dark text-ember-cream antialiased;
+  @apply bg-paper text-body antialiased;
   font-family: var(--font-sans);
-  overflow-x: hidden;
 }
 
-/* Grain overlay — matches reference design */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 100;
-  opacity: 0.4;
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-12px) rotate(1deg);
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
   }
 }

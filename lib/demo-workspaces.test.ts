@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { parseDemoWorkspaces, slugForApiKey, workspaceFor } from './demo-workspaces.ts';
 
 const RAW = JSON.stringify({
-  'ember-box': { apiKey: 'pk_a', secretKey: 'sk_a' },
+  'age-id': { apiKey: 'pk_a', secretKey: 'sk_a' },
   'eudi-wallet': { apiKey: 'pk_b', secretKey: 'sk_b' },
 });
 
@@ -19,7 +19,7 @@ test('missing env names the variable', () => {
 
 test('invalid JSON names the variable and not the content', () => {
   assert.throws(
-    () => parseDemoWorkspaces('{"ember-box":{"apiKey":"pk_secretish"'),
+    () => parseDemoWorkspaces('{"age-id":{"apiKey":"pk_secretish"'),
     (error: Error) => /not valid JSON/.test(error.message) && !error.message.includes('pk_secretish'),
   );
 });
@@ -33,7 +33,7 @@ test('rejects arrays and entries without both keys', () => {
 
 test('workspaceFor throws on an unknown slug', () => {
   const map = parseDemoWorkspaces(RAW);
-  assert.equal(workspaceFor(map, 'ember-box').apiKey, 'pk_a');
+  assert.equal(workspaceFor(map, 'age-id').apiKey, 'pk_a');
   assert.throws(() => workspaceFor(map, 'nope'), /has no entry for "nope"/);
   assert.throws(() => workspaceFor(map, 'toString'), /has no entry for "toString"/);
 });
@@ -44,4 +44,12 @@ test('slugForApiKey matches public keys only', () => {
   assert.equal(slugForApiKey(map, 'sk_b'), null);
   assert.equal(slugForApiKey(map, null), null);
   assert.equal(slugForApiKey(map, ''), null);
+});
+
+test('a secret key in the public slot is refused, without echoing it', () => {
+  assert.throws(
+    () => parseDemoWorkspaces('{"kyc":{"apiKey":"sk_live_leak","secretKey":"sk_live_other"}}'),
+    (error: Error) => /\["kyc"\] apiKey must be the public key/.test(error.message) && !error.message.includes('leak'),
+  );
+  assert.throws(() => parseDemoWorkspaces('{"kyc":{"apiKey":"pk_same","secretKey":"pk_same"}}'), /apiKey must be the public key/);
 });
