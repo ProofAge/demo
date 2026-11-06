@@ -39,8 +39,7 @@ export const CHECK_NOTE: Record<Check, string | null> = {
 
 export const OPENS_LABELS: Record<Opens, string> = { popup: 'Over this page', tab: 'In a new tab' };
 export const OPENS_LINE =
-  'Your choice when you integrate: a popup over your page, or a link that opens the check in a new tab. Phones always use a new tab.';
-export const PHONE_LINE = 'On a phone the check opens in a new tab. Come back here: this page updates by itself.';
+  'Your choice when you integrate: a popup over your page, or a link that opens the check in a new tab.';
 
 export const LOOK_LABELS: Record<Look, string> = { proofage: 'ProofAge', lumo: 'Your brand' };
 export const LOOK_LINE =

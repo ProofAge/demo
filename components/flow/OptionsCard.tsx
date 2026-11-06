@@ -10,7 +10,6 @@ import {
   LOOK_LINE,
   OPENS_LABELS,
   OPENS_LINE,
-  PHONE_LINE,
   type DemoOptions,
 } from '@/lib/demo-options';
 import { LOOKS, OPENS, type Check } from '@/lib/demo-pages';
@@ -94,10 +93,9 @@ export function OptionsCard({ options, onChange, disabled }: { options: DemoOpti
       <Row id="hint-check" hint={<CheckHint check={options.check} />}>
         <Segmented name="check" legend="Which flow to try" values={CHECK_ORDER} labels={CHECK_LABELS} shortLabels={CHECK_SHORT_LABELS} value={options.check} onChange={(check) => onChange({ ...options, check })} disabled={disabled} describedBy="hint-check" />
       </Row>
-      <Row id="hint-opens" className="hidden md:block" hint={OPENS_LINE}>
+      <Row id="hint-opens" hint={OPENS_LINE}>
         <Segmented name="opens" legend="Opens" values={OPENS} labels={OPENS_LABELS} value={options.opens} onChange={(opens) => onChange({ ...options, opens })} disabled={disabled} describedBy="hint-opens" />
       </Row>
-      <p className="text-sm text-muted md:hidden">{PHONE_LINE}</p>
       <Row id="hint-look" hint={LOOK_LINE}>
         <Segmented
           name="look"

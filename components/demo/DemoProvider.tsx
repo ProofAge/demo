@@ -221,8 +221,7 @@ export function DemoProvider({ page, apiKeys, method, children }: DemoProviderPr
       return;
     }
     lastStart.current = { slug, opens };
-    // Phones always get a new tab, which the polling was built for.
-    const openInNewTab = opens === 'tab' || window.matchMedia('(max-width: 767px)').matches;
+    const openInNewTab = opens === 'tab';
     setSample(null);
     setError(null);
     setTimedOut(false);
