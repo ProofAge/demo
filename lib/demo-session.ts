@@ -7,7 +7,7 @@ import { shouldRecordSubmission } from '@/lib/decision-timing';
 import { checkOf, type DemoPage, type WorkspaceSlug } from '@/lib/demo-pages';
 import { resultFromVerification, type ConsoleLive, type LoadedResult } from '@/lib/demo-result';
 import { buildReceipt } from '@/lib/receipt';
-import { scrubRecord } from '@/lib/erasure';
+import { ERASABLE_STATUSES, scrubRecord } from '@/lib/erasure';
 import { documentForOwner, maskTail, MASK } from '@/lib/redaction';
 import type { WebhookRecord } from '@/lib/webhook-record';
 import { webhookStore, type WebhookStore } from '@/lib/webhook-store';
@@ -29,15 +29,23 @@ export async function loadResult(page: DemoPage): Promise<LoadedResult> {
     const verification = await clientFor(session.slug).verifications().find(session.verificationId);
     const owned = verification !== null && verification.external_id === visitorId;
     const kv = owned ? webhookStore() : null;
-    const stored = kv && verification ? await readStored(kv, session.verificationId, verification.status, visitorId) : null;
+    // Erased in ProofAge, or being erased at the demo's request: ProofAge deletes the photos first
+    // and shows the erasure a few seconds later, so a reload in between must not show the rest.
+    const [stored, erasing] = await Promise.all([
+      kv && verification ? readStored(kv, session.verificationId, verification.status, visitorId) : null,
+      kv && verification && !verification.erasure && ERASABLE_STATUSES.has(verification.status)
+        ? kv.erasureOf(session.verificationId).catch(() => null)
+        : null,
+    ]);
     const maskAll = isMaskAll();
-    const erasedAt = verification?.erasure?.erased_at ?? null;
+    const erasedAt = verification?.erasure?.erased_at ?? (erasing ? (erasing.at ?? new Date().toISOString()) : null);
+    const detailsKey = verification?.erasure?.erased_at ?? (erasing ? 'erasing' : null);
 
     // After a decision: the document (fields, media list), the estimation and the workspace name.
     // Once erased, the fields are null and the media have no source: only the list is shown.
     const decided = owned && verification !== null && DECISIONS.has(verification.status);
     const [details, workspaceName] = decided
-      ? await Promise.all([readDetails(session.slug, session.verificationId, verification.status, erasedAt), readWorkspaceName(session.slug)])
+      ? await Promise.all([readDetails(session.slug, session.verificationId, verification.status, detailsKey), readWorkspaceName(session.slug)])
       : [null, null];
     const record = stored?.record && erasedAt ? scrubRecord(stored.record) : (stored?.record ?? null);
 
@@ -134,7 +142,8 @@ function consoleLive(
     attemptId: read.document?.meta?.attempt_id ?? read.estimation?.attemptId ?? null,
     document: read.document?.document && !read.erased ? documentForOwner(read.document.document, maskAll) : null,
     estimation: read.estimation && { minimum: read.estimation.minimum, passed: read.estimation.passed, gender: read.estimation.gender },
-    media: mediaSlots(read.document?.media ?? []),
+    // Once erased (or while being erased) the list stays, without anything to load.
+    media: mediaSlots(read.document?.media ?? []).map((slot) => (read.erased ? { ...slot, src: null } : slot)),
   };
 }
 
@@ -145,17 +154,18 @@ const detailsCache = new Map<string, { at: number; details: Details }>();
 /**
  * The document and the estimation barely change after a decision, but the page polls every second
  * while it waits for the webhook: read them once per verification, status and erasure, then reuse
- * for a minute. An erasure starts a new entry, so nothing read before it is served after it.
+ * for a minute. An erasure (`erasure`: its time, or "erasing") starts a new entry, so nothing read
+ * before it is served after it.
  */
-export async function readDetails(slug: WorkspaceSlug, verificationId: string, status: string, erasedAt: string | null): Promise<Details> {
-  const key = `${verificationId}:${status}:${erasedAt ?? ''}`;
+export async function readDetails(slug: WorkspaceSlug, verificationId: string, status: string, erasure: string | null): Promise<Details> {
+  const key = `${verificationId}:${status}:${erasure ?? ''}`;
   const cached = detailsCache.get(key);
   if (cached && Date.now() - cached.at < DETAILS_TTL_MS) {
     return cached.details;
   }
   const [document, estimation] = await Promise.all([
     readDocument(slug, verificationId),
-    checkOf(slug) === 'selfie' && !erasedAt ? readEstimation(slug, verificationId) : null,
+    checkOf(slug) === 'selfie' && !erasure ? readEstimation(slug, verificationId) : null,
   ]);
   for (const [oldKey, entry] of detailsCache) {
     if (Date.now() - entry.at >= DETAILS_TTL_MS) {

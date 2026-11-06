@@ -32,7 +32,7 @@ export async function POST(request: Request): Promise<Response> {
         return;
       }
       try {
-        const [previous, erased] = await Promise.all([store.getRecord(payload.verification_id), store.isErased(payload.verification_id)]);
+        const [previous, erased] = await Promise.all([store.getRecord(payload.verification_id), store.erasureOf(payload.verification_id)]);
         const record = mergeWebhook(previous, { payload: payload, receivedAt: new Date().toISOString(), deliveryId });
         // A delivery that arrives after the demo erased the check keeps no personal data either.
         await store.saveRecord(payload.verification_id, erased ? scrubRecord(record) : record);

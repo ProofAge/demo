@@ -10,9 +10,16 @@ export type WebhookStore = {
   getSubmittedSeenAt(verificationId: string): Promise<string | null>;
   /** The caller decides when to overwrite (`shouldRecordSubmission`). */
   setSubmittedSeen(verificationId: string, at: string): Promise<void>;
-  /** The check was erased in ProofAge: a webhook arriving later is stored without its personal data. */
-  markErased(verificationId: string): Promise<void>;
-  isErased(verificationId: string): Promise<boolean>;
+  /**
+   * The demo asked ProofAge to erase the check (`at` null until ProofAge confirmed it). From then on
+   * the page shows no personal data, even while ProofAge is still deleting it, and a webhook
+   * arriving later is stored without it.
+   */
+  markErasing(verificationId: string): Promise<void>;
+  confirmErased(verificationId: string, at: string): Promise<void>;
+  /** The erasure failed for good: nothing was deleted. */
+  clearErasing(verificationId: string): Promise<void>;
+  erasureOf(verificationId: string): Promise<{ at: string | null } | null>;
 };
 
 const recordKey = (id: string) => `pa_demo:webhook:${id}`;
@@ -47,10 +54,16 @@ function redisStore(client: Redis): WebhookStore {
     setSubmittedSeen: async (id, at) => {
       await client.set(seenKey(id), { at }, { ex: TTL_SECONDS });
     },
-    markErased: async (id) => {
-      await client.set(erasedKey(id), 1, { ex: TTL_SECONDS });
+    markErasing: async (id) => {
+      await client.set(erasedKey(id), { at: null }, { ex: TTL_SECONDS });
     },
-    isErased: async (id) => (await client.exists(erasedKey(id))) === 1,
+    confirmErased: async (id, at) => {
+      await client.set(erasedKey(id), { at }, { ex: TTL_SECONDS });
+    },
+    clearErasing: async (id) => {
+      await client.del(erasedKey(id));
+    },
+    erasureOf: (id) => client.get<{ at: string | null }>(erasedKey(id)),
   };
 }
 
@@ -79,9 +92,15 @@ function memoryStore(): WebhookStore {
     setSubmittedSeen: async (id, at) => {
       write(seenKey(id), at);
     },
-    markErased: async (id) => {
-      write(erasedKey(id), true);
+    markErasing: async (id) => {
+      write(erasedKey(id), { at: null });
     },
-    isErased: async (id) => read<boolean>(erasedKey(id)) === true,
+    confirmErased: async (id, at) => {
+      write(erasedKey(id), { at });
+    },
+    clearErasing: async (id) => {
+      map.delete(erasedKey(id));
+    },
+    erasureOf: async (id) => read<{ at: string | null }>(erasedKey(id)),
   };
 }
