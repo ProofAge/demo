@@ -1,5 +1,6 @@
 import type { VerificationDocument } from '@proofage/node';
 import type { Check } from './demo-pages.ts';
+import { expiryMarker, type ExpiryMarker } from './document-expiry.ts';
 import type { RedactedPayload } from './redaction.ts';
 
 type DocumentFieldKey = keyof VerificationDocument['document']['fields'];
@@ -48,8 +49,10 @@ export const FIELD_ROWS: readonly FieldRow[] = [
   { label: 'Expiry date', source: { field: 'expiry_date' }, checks: KYC_ONLY },
 ];
 
-/** The document rows, filled from this payload; null = not printed. */
-export function receivedFields(check: Check, payload: RedactedPayload): { label: string; value: string | null }[] {
+export type ReceivedField = { label: string; value: string | null; expiry?: ExpiryMarker | null };
+
+/** The document rows, filled from this payload; null = not printed. The expiry date is marked against `now`. */
+export function receivedFields(check: Check, payload: RedactedPayload, now?: Date): ReceivedField[] {
   const document = asRecord(payload.document);
   if (!document) {
     return [];
@@ -60,7 +63,10 @@ export function receivedFields(check: Check, payload: RedactedPayload): { label:
       return [];
     }
     if ('field' in row.source) {
-      return [{ label: row.label, value: asText(fields[row.source.field]) }];
+      const value = asText(fields[row.source.field]);
+      return row.source.field === 'expiry_date' && now
+        ? [{ label: row.label, value, expiry: expiryMarker(value, now) }]
+        : [{ label: row.label, value }];
     }
     if ('document' in row.source) {
       return [{ label: row.label, value: asText(document[row.source.document]) }];

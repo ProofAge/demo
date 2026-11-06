@@ -3,6 +3,7 @@
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Badge } from '@/components/Badge';
 import { ConsoleIcon, SIDEBAR_ICONS, SIDEBAR_LABELS } from '@/components/result/ConsoleIcons';
+import { ExpiryMark } from '@/components/result/ExpiryMark';
 import { jsonBlock } from '@/components/result/WebhookJson';
 import type { ConsoleView, MediaSlot } from '@/lib/console-view';
 import type { DemoDisplay } from '@/lib/demo-display';
@@ -303,6 +304,7 @@ function AttemptTab({ view, revealed, onReveal }: { view: ConsoleView; revealed:
                   <dt className={dt}>{row.label}</dt>
                   <dd className="mt-0.5 whitespace-pre-line break-words font-mono text-xs text-body">
                     {row.value ?? <span className="font-sans italic text-muted">Not printed</span>}
+                    {row.value && <ExpiryMark expiry={row.expiry} />}
                   </dd>
                 </div>
               ))}

@@ -4,7 +4,7 @@ import type { Check, Look, Opens } from './demo-pages.ts';
 import { CHECK_NAMES } from './demo-options.ts';
 import { normaliseFirstName } from './demo-result.ts';
 import type { DemoErasure } from './erasure.ts';
-import { receivedFields } from './fields.ts';
+import { receivedFields, type ReceivedField } from './fields.ts';
 import { maskTail } from './redaction.ts';
 
 export type Tone = 'ok' | 'warn' | 'danger' | 'neutral';
@@ -31,7 +31,7 @@ export type Summary = {
   badge: { label: string; tone: Tone };
   lines: SummaryLine[];
   /** KYC only: every field on the document. */
-  allFields: { label: string; value: string | null }[] | null;
+  allFields: ReceivedField[] | null;
 };
 
 const BADGES: Record<string, { label: string; tone: Tone }> = {
@@ -77,7 +77,7 @@ export function buildSummary(input: SummaryInput): Summary {
   }
   lines.push({ label: 'Delivered', value: deliveredText(input) });
 
-  const allFields = approved && input.check === 'kyc' && input.payload ? receivedFields('kyc', input.payload) : [];
+  const allFields = approved && input.check === 'kyc' && input.payload ? receivedFields('kyc', input.payload, input.now) : [];
   return { badge, lines, allFields: allFields.length ? allFields : null };
 }
 

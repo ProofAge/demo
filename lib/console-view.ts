@@ -1,5 +1,5 @@
 import type { Check } from './demo-pages.ts';
-import { receivedFields } from './fields.ts';
+import { receivedFields, type ReceivedField } from './fields.ts';
 import { relativeTime } from './relative-time.ts';
 import { hasPrintedField, type Delivery, type Tone } from './summary.ts';
 
@@ -49,7 +49,7 @@ export type ConsoleView = {
   technical: { label: string; value: string }[];
   /** What to say when `technical` is empty; null when there are rows. */
   technicalEmpty: string | null;
-  document: { label: string; value: string | null }[] | null;
+  document: ReceivedField[] | null;
   estimation: { threshold: string; passed: boolean | null; gender: string | null } | null;
   mrz: readonly string[] | null;
   media: MediaSlot[];
@@ -123,7 +123,7 @@ export function buildConsoleView(input: ConsoleInput): ConsoleView {
   const hasDocument =
     Boolean(input.payload?.document && typeof input.payload.document === 'object') &&
     (input.check !== 'selfie' || (!!documentFields && typeof documentFields === 'object' && hasPrintedField(documentFields as Record<string, unknown>)));
-  const documentRows = hasDocument && input.payload ? receivedFields(input.check === 'kyc' ? 'kyc' : 'age-id', input.payload) : [];
+  const documentRows = hasDocument && input.payload ? receivedFields(input.check === 'kyc' ? 'kyc' : 'age-id', input.payload, now) : [];
   const technical = technicalRows(input.payload);
   const estimation = input.check === 'selfie' ? input.estimation : null;
   return {

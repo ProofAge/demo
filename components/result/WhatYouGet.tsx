@@ -6,6 +6,7 @@ import { badgeBase, badgeTone, sectionTitle, surfaceCard, textLink } from '@/com
 import type { DemoDisplay } from '@/lib/demo-display';
 import { maskForDisplay } from '@/lib/redaction';
 import { contextLine } from '@/lib/summary';
+import { ExpiryMark } from '@/components/result/ExpiryMark';
 import { WebhookJson } from '@/components/result/WebhookJson';
 
 /** Part A: what your system gets, in human lines, with the webhook behind a toggle. */
@@ -58,7 +59,14 @@ export function WhatYouGet({ display, revealed, onReveal }: { display: DemoDispl
                 <div key={row.label} className="grid grid-cols-[8.5rem_1fr] gap-3 py-1.5">
                   <dt className="text-muted">{row.label}</dt>
                   <dd className="min-w-0 whitespace-pre-line break-words font-mono text-xs text-ink">
-                    {row.value === null ? <span className="font-sans text-muted">Not printed</span> : maskedValue(display, row.label, row.value, revealed)}
+                    {row.value === null ? (
+                      <span className="font-sans text-muted">Not printed</span>
+                    ) : (
+                      <>
+                        {maskedValue(display, row.label, row.value, revealed)}
+                        <ExpiryMark expiry={row.expiry} />
+                      </>
+                    )}
                   </dd>
                 </div>
               ))}
