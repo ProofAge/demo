@@ -1,5 +1,6 @@
 import { checkOf, type Check, type DemoPage, type WorkspaceSlug } from './demo-pages.ts';
 import type { ConsoleInput } from './console-view.ts';
+import type { DemoErasure } from './erasure.ts';
 import type { Receipt } from './receipt.ts';
 
 export type DemoState =
@@ -52,6 +53,8 @@ export type LoadedResult =
       receipt: Receipt | null;
       storage: boolean;
       console: ConsoleLive | null;
+      /** Set once the check's personal data was erased in ProofAge. */
+      erasure: DemoErasure | null;
     };
 
 /** ProofAge has no manual review in production; a test workspace's `review` is still "checking". */
@@ -124,5 +127,6 @@ export function resultFromVerification(input: {
     receipt: null,
     storage: false,
     console: null,
+    erasure: null,
   };
 }

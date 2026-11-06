@@ -3,6 +3,7 @@ import type { DecisionTiming } from './decision-timing.ts';
 import type { Check, Look, Opens } from './demo-pages.ts';
 import { CHECK_NAMES } from './demo-options.ts';
 import { normaliseFirstName } from './demo-result.ts';
+import type { DemoErasure } from './erasure.ts';
 import { receivedFields } from './fields.ts';
 import { maskTail } from './redaction.ts';
 
@@ -20,6 +21,8 @@ export type SummaryInput = {
   timing: DecisionTiming | null;
   delivery: Delivery;
   now: Date;
+  /** Set once the demo erased the check's personal data in ProofAge. */
+  erasure?: DemoErasure | null;
 };
 
 export type SummaryLine = { label: string; value: string };
@@ -65,6 +68,10 @@ export function buildSummary(input: SummaryInput): Summary {
     lines.push({ label: 'Personal data', value: PERSONAL_DATA_NONE });
   }
 
+  if (input.erasure) {
+    lines.push({ label: 'Erased', value: erasedText(input.erasure) });
+  }
+
   if (input.timing) {
     lines.push({ label: 'Decision time', value: `${input.timing.approximate ? 'about ' : ''}${formatSeconds(input.timing)} s after submission` });
   }
@@ -74,12 +81,21 @@ export function buildSummary(input: SummaryInput): Summary {
   return { badge, lines, allFields: allFields.length ? allFields : null };
 }
 
+/** Photos, document fields and device data are gone from ProofAge; the page may still hold its own copy. */
+export function erasedText(erasure: DemoErasure): string {
+  const date = new Date(erasure.erasedAt);
+  const at = Number.isNaN(date.getTime()) ? '' : ` at ${date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  return erasure.keptInPage
+    ? `Photos and personal data deleted from ProofAge${at}. This page keeps its copy until you reload it.`
+    : `Photos and personal data were deleted from ProofAge${at}, right after you saw the result.`;
+}
+
 function deliveredText(input: SummaryInput): string {
   switch (input.delivery) {
     case 'sample':
       return 'sample payload, not signed';
     case 'pending':
-      return 'waiting for the webhook';
+      return input.erasure ? 'the webhook did not arrive before the data was deleted' : 'waiting for the webhook';
     case 'unconfigured':
       return 'not shown, webhook storage is not configured on this deployment';
     default:

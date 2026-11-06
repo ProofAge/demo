@@ -4,7 +4,8 @@ import Script from 'next/script';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { DemoPage, Opens, WorkspaceSlug } from '@/lib/demo-pages';
 import { pollMode, toDisplay, type DemoDisplay, type PollMode, type Sample } from '@/lib/demo-display';
-import type { DemoState, LoadedResult } from '@/lib/demo-result';
+import type { ConsoleLive, DemoState, LoadedResult } from '@/lib/demo-result';
+import { ERASE_ATTEMPTS, ERASE_RETRY_MS, eraseDelay, withKept, type KeptResult } from '@/lib/erasure';
 import { lookOf } from '@/lib/demo-pages';
 import { resolveStart, startPanel, type StartPanel } from '@/lib/start-panel';
 
@@ -66,6 +67,23 @@ export function DemoProvider({ page, apiKeys, method, children }: DemoProviderPr
   const [started, setStarted] = useState<{ look: 'proofage' | 'lumo'; opens: Opens } | null>(null);
   const verifyTabRef = useRef<Window | null>(null);
   const lastStart = useRef<{ slug: WorkspaceSlug; opens: Opens } | null>(null);
+  // The copy of the result this page keeps once it asks ProofAge to erase the check.
+  const [kept, setKept] = useState<KeptResult | null>(null);
+  const keptRef = useRef<KeptResult | null>(null);
+  const liveRef = useRef<LoadedResult | null>(null);
+  liveRef.current = live;
+  const erasing = useRef<string | null>(null);
+  const decisionSeen = useRef<{ key: string; at: number } | null>(null);
+
+  const replaceKept = useCallback((next: KeptResult | null | ((previous: KeptResult | null) => KeptResult | null)) => {
+    const previous = keptRef.current;
+    const value = typeof next === 'function' ? next(previous) : next;
+    if (previous && previous.console !== value?.console) {
+      revokePhotos(previous.console);
+    }
+    keptRef.current = value;
+    setKept(value);
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -141,6 +159,31 @@ export function DemoProvider({ page, apiKeys, method, children }: DemoProviderPr
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [refresh]);
+
+  // Once the visitor has the result (and its webhook, or 30 s without it): copy the photos into this
+  // page, then erase the check in ProofAge. A reload afterwards shows the status only.
+  useEffect(() => {
+    if (live?.kind !== 'ok') {
+      return;
+    }
+    const key = `${live.verificationId}:${live.view.status}`;
+    if (decisionSeen.current?.key !== key) {
+      decisionSeen.current = { key, at: Date.now() };
+    }
+    const delay = eraseDelay(live, decisionSeen.current.at, Date.now());
+    if (delay === null || erasing.current === live.verificationId) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      const current = liveRef.current;
+      if (current?.kind !== 'ok' || current.verificationId !== live.verificationId || erasing.current === current.verificationId) {
+        return;
+      }
+      erasing.current = current.verificationId;
+      void keepAndErase(current, replaceKept);
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [live, replaceKept]);
 
   const closeVerifyTab = useCallback(() => {
     try {
@@ -227,6 +270,7 @@ export function DemoProvider({ page, apiKeys, method, children }: DemoProviderPr
       const verificationUrl = await createSession(slug);
       // The new session exists: only now does the previous result make way for it.
       setLive(null);
+      replaceKept(null);
       setWatching(true);
       setPopupOpen(!openInNewTab);
       void refresh();
@@ -246,8 +290,8 @@ export function DemoProvider({ page, apiKeys, method, children }: DemoProviderPr
 
   const state: DemoState | null = live?.kind === 'ok' ? live.view.state : null;
   const display = useMemo(
-    () => toDisplay(live, sample, { now: new Date(), started: started && { look: started.look, opens: started.opens } }),
-    [live, sample, started],
+    () => toDisplay(withKept(live, kept), sample, { now: new Date(), started: started && { look: started.look, opens: started.opens } }),
+    [live, kept, sample, started],
   );
   // The widget may stay open on its "complete" screen after the decision: the page is past it.
   useEffect(() => {
@@ -282,4 +326,54 @@ export function DemoProvider({ page, apiKeys, method, children }: DemoProviderPr
       {children}
     </DemoContext.Provider>
   );
+}
+
+type LiveResult = Extract<LoadedResult, { kind: 'ok' }>;
+
+const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+/** Copies each photo into this page (a blob URL), keeps the result, then asks for the erasure until it is done. */
+async function keepAndErase(live: LiveResult, replaceKept: (next: (previous: KeptResult | null) => KeptResult | null) => void) {
+  const copy = live.console && { ...live.console, media: await Promise.all(live.console.media.map(keepPhoto)) };
+  replaceKept(() => ({ verificationId: live.verificationId, status: live.view.status, console: copy, receipt: live.receipt, erasedAt: null }));
+
+  for (let attempt = 0; attempt < ERASE_ATTEMPTS; attempt++) {
+    const response = await fetch('/api/demo-session/erase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verificationId: live.verificationId }),
+    }).catch(() => null);
+    const body = (await response?.json().catch(() => null)) as { erasedAt?: string; retryAfter?: number } | null;
+    if (response?.ok && body?.erasedAt) {
+      const erasedAt = body.erasedAt;
+      replaceKept((previous) => (previous?.verificationId === live.verificationId ? { ...previous, erasedAt } : previous));
+      return;
+    }
+    // Anything but "try again" (or a dropped connection) stops here; the workspace erases it within two days anyway.
+    if (response && response.status !== 409) {
+      return;
+    }
+    await sleep(typeof body?.retryAfter === 'number' ? body.retryAfter * 1000 : ERASE_RETRY_MS);
+  }
+}
+
+async function keepPhoto(slot: ConsoleLive['media'][number]): Promise<ConsoleLive['media'][number]> {
+  if (!slot.src) {
+    return slot;
+  }
+  try {
+    const response = await fetch(slot.src, { cache: 'no-store' });
+    const blob = response.ok ? await response.blob() : null;
+    return { ...slot, src: blob && blob.type.startsWith('image/') ? URL.createObjectURL(blob) : null };
+  } catch {
+    return { ...slot, src: null };
+  }
+}
+
+function revokePhotos(console: ConsoleLive | null) {
+  for (const slot of console?.media ?? []) {
+    if (slot.src?.startsWith('blob:')) {
+      URL.revokeObjectURL(slot.src);
+    }
+  }
 }

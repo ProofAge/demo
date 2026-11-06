@@ -17,6 +17,7 @@ const live = (status: string, extra: Partial<Extract<LoadedResult, { kind: 'ok' 
   view: toResultView(status, null, 'https://x.test/v', '2026-11-05T11:59:50Z'),
   receipt: null,
   storage: true,
+  erasure: null,
   console: { workspaceName: 'Demo', url: 'https://x.test/v/abc', createdAt: '2026-11-05T11:59:00Z', updatedAt: '2026-11-05T11:59:50Z', externalId: '•••• AAAA', metadata: null, attemptId: null, document: null, estimation: null, media: [] },
   ...extra,
 });

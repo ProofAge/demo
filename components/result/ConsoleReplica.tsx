@@ -53,7 +53,7 @@ export function ConsoleReplica({ display, revealed, onReveal }: { display: DemoD
                 <WebhooksTab view={view} display={display} revealed={revealed} />
               </div>
             </div>
-            {view.media.length > 0 && <Media slots={view.media} />}
+            {view.media.length > 0 && <Media slots={view.media} erased={view.erased} />}
           </div>
         </div>
       </div>
@@ -359,7 +359,7 @@ function WebhooksTab({ view, display, revealed }: { view: ConsoleView; display: 
   );
 }
 
-function Media({ slots }: { slots: MediaSlot[] }) {
+function Media({ slots, erased }: { slots: MediaSlot[]; erased: boolean }) {
   const [index, setIndex] = useState(0);
   const current = slots[Math.min(index, slots.length - 1)];
   const step = (delta: number) => setIndex((i) => (i + delta + slots.length) % slots.length);
@@ -387,8 +387,10 @@ function Media({ slots }: { slots: MediaSlot[] }) {
           <img key={current.src} src={current.src} alt={current.label} className="h-full w-full object-contain" />
         ) : (
           <div className="p-4 text-center">
-            <p className="text-sm font-medium text-ink">No longer stored</p>
-            <p className="mt-1 text-xs text-muted">This file was removed after its retention period.</p>
+            <p className="text-sm font-medium text-ink">{erased ? 'Deleted' : 'No longer stored'}</p>
+            <p className="mt-1 text-xs text-muted">
+              {erased ? 'The demo erased this check’s personal data in ProofAge after you saw the result.' : 'This file was removed after its retention period.'}
+            </p>
           </div>
         )}
       </div>

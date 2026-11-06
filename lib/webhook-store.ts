@@ -10,10 +10,14 @@ export type WebhookStore = {
   getSubmittedSeenAt(verificationId: string): Promise<string | null>;
   /** The caller decides when to overwrite (`shouldRecordSubmission`). */
   setSubmittedSeen(verificationId: string, at: string): Promise<void>;
+  /** The check was erased in ProofAge: a webhook arriving later is stored without its personal data. */
+  markErased(verificationId: string): Promise<void>;
+  isErased(verificationId: string): Promise<boolean>;
 };
 
 const recordKey = (id: string) => `pa_demo:webhook:${id}`;
 const seenKey = (id: string) => `pa_demo:submitted:${id}`;
+const erasedKey = (id: string) => `pa_demo:erased:${id}`;
 
 let redis: Redis | null = null;
 
@@ -43,6 +47,10 @@ function redisStore(client: Redis): WebhookStore {
     setSubmittedSeen: async (id, at) => {
       await client.set(seenKey(id), { at }, { ex: TTL_SECONDS });
     },
+    markErased: async (id) => {
+      await client.set(erasedKey(id), 1, { ex: TTL_SECONDS });
+    },
+    isErased: async (id) => (await client.exists(erasedKey(id))) === 1,
   };
 }
 
@@ -71,5 +79,9 @@ function memoryStore(): WebhookStore {
     setSubmittedSeen: async (id, at) => {
       write(seenKey(id), at);
     },
+    markErased: async (id) => {
+      write(erasedKey(id), true);
+    },
+    isErased: async (id) => read<boolean>(erasedKey(id)) === true,
   };
 }

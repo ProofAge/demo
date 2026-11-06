@@ -27,7 +27,10 @@ export async function GET(request: Request): Promise<Response> {
     // three photos cost three downloads, not three more document reads.
     const verification = await client.verifications().find(session.verificationId);
     const externalId = verification?.external_id ?? null;
-    const { document } = externalId === visitorId && verification ? await readDetails(session.slug, session.verificationId, verification.status) : { document: null };
+    const { document } =
+      externalId === visitorId && verification && !verification.erasure
+        ? await readDetails(session.slug, session.verificationId, verification.status, null)
+        : { document: null };
     const allowed = authoriseMedia({ visitorId, externalId, mediaId, media: document?.media ?? [] });
     if (!allowed.ok) {
       return notFound();

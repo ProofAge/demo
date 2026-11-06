@@ -30,6 +30,8 @@ export type ConsoleInput = {
   webhook: { receivedAt: string; deliveryId: string | null; status: string; signed: boolean } | null;
   /** Why the webhook-only parts (technical information) may be empty. */
   delivery: Delivery;
+  /** The check's personal data was erased in ProofAge: photos without a source were deleted, not expired. */
+  erased?: boolean;
 };
 
 export type ConsoleView = {
@@ -53,6 +55,7 @@ export type ConsoleView = {
   media: MediaSlot[];
   webhook: ConsoleInput['webhook'];
   sample: boolean;
+  erased: boolean;
 };
 
 const MEDIA_LABELS: Record<string, string> = {
@@ -142,13 +145,14 @@ export function buildConsoleView(input: ConsoleInput): ConsoleView {
       failureReason: verification.status === 'approved' ? null : input.reasonLabel,
     },
     technical,
-    technicalEmpty: technical.length ? null : TECHNICAL_EMPTY[input.delivery],
+    technicalEmpty: technical.length ? null : input.erased ? 'Deleted with the personal data' : TECHNICAL_EMPTY[input.delivery],
     document: documentRows.length ? documentRows : null,
     estimation: estimation ? { threshold: estimation.minimum === null ? '-' : `${estimation.minimum}+`, passed: estimation.passed, gender: estimation.gender } : null,
     mrz: input.sample && hasDocument ? input.mrz : null,
     media: input.media,
     webhook: input.webhook,
     sample: input.sample,
+    erased: input.erased === true,
   };
 }
 

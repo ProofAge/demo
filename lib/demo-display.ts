@@ -65,6 +65,7 @@ export function toDisplay(live: LoadedResult | null, sample: Sample | null, ctx:
     mrz: null,
     webhook: receipt ? { receivedAt: receipt.receivedAt, deliveryId: receipt.deliveryId, status: receipt.status, signed: true } : null,
     delivery,
+    erased: live.erasure !== null,
   };
   return assemble({
     key: `${live.verificationId}:${live.view.status}`,
@@ -72,7 +73,7 @@ export function toDisplay(live: LoadedResult | null, sample: Sample | null, ctx:
     sample: false,
     context: { look: lookOf(live.slug), opens: ctx.started?.opens ?? null, at: parseDate(live.view.decidedAt) },
     input,
-    summaryInput: { delivery, timing: receipt?.timing ?? null, reason: live.view.reason, reasonLabel: input.reasonLabel },
+    summaryInput: { delivery, timing: receipt?.timing ?? null, reason: live.view.reason, reasonLabel: input.reasonLabel, erasure: live.erasure },
     view: live.view,
     receipt,
     storage: live.storage,
@@ -123,7 +124,7 @@ function assemble(parts: {
   sample: boolean;
   context: DemoDisplay['context'];
   input: ConsoleInput;
-  summaryInput: Pick<Parameters<typeof buildSummary>[0], 'delivery' | 'timing' | 'reason' | 'reasonLabel'>;
+  summaryInput: Pick<Parameters<typeof buildSummary>[0], 'delivery' | 'timing' | 'reason' | 'reasonLabel' | 'erasure'>;
   view: ResultView | null;
   receipt: Receipt | null;
   storage: boolean;
@@ -178,7 +179,8 @@ export function pollMode(live: LoadedResult | null, watching: boolean): PollMode
   if (watching && (!view || view.state === 'not_finished' || view.state === 'retry')) {
     return 'person';
   }
-  if (ok && view && ok.storage && DECIDED.has(view.state) && !currentReceipt(ok)) {
+  // An erased check gets no new webhook worth waiting for.
+  if (ok && view && ok.storage && !ok.erasure && DECIDED.has(view.state) && !currentReceipt(ok)) {
     return 'webhook';
   }
   return null;
