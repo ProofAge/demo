@@ -365,10 +365,13 @@ function Media({ slots, erased }: { slots: MediaSlot[]; erased: boolean }) {
   const [index, setIndex] = useState(0);
   const current = slots[Math.min(index, slots.length - 1)];
   const step = (delta: number) => setIndex((i) => (i + delta + slots.length) % slots.length);
+  // A swipe (or a drag with the mouse) switches files, as people try it on a photo anyway.
+  const swipeFrom = useRef<number | null>(null);
+  const SWIPE_PX = 40;
   return (
     <div className={`${card} lg:sticky lg:top-4`}>
       <h3 className="text-sm font-medium text-ink">Media</h3>
-      <p className="mt-0.5 text-xs text-muted">Use the arrows to switch between media files.</p>
+      <p className="mt-0.5 text-xs text-muted">Use the arrows or swipe to switch between media files.</p>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-sm font-medium text-body">{current.label}</span>
         <div className="flex items-center gap-2">
@@ -383,10 +386,25 @@ function Media({ slots, erased }: { slots: MediaSlot[]; erased: boolean }) {
           </button>
         </div>
       </div>
-      <div className="mt-3 flex h-[320px] items-center justify-center overflow-hidden rounded-lg border border-line bg-paper sm:h-[380px]">
+      <div
+        className="mt-3 flex h-[320px] touch-pan-y select-none items-center justify-center overflow-hidden rounded-lg border border-line bg-paper sm:h-[380px]"
+        onPointerDown={(event) => {
+          swipeFrom.current = event.clientX;
+        }}
+        onPointerUp={(event) => {
+          const from = swipeFrom.current;
+          swipeFrom.current = null;
+          if (from !== null && slots.length > 1 && Math.abs(event.clientX - from) >= SWIPE_PX) {
+            step(event.clientX < from ? 1 : -1);
+          }
+        }}
+        onPointerCancel={() => {
+          swipeFrom.current = null;
+        }}
+      >
         {current.src ? (
           // eslint-disable-next-line @next/next/no-img-element -- own-photo stream from a no-store route; nothing to optimise
-          <img key={current.src} src={current.src} alt={current.label} className="h-full w-full object-contain" />
+          <img key={current.src} src={current.src} alt={current.label} draggable={false} className="pointer-events-none h-full w-full object-contain" />
         ) : (
           <div className="p-4 text-center">
             <p className="text-sm font-medium text-ink">{erased ? 'Deleted' : 'No longer stored'}</p>
