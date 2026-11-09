@@ -80,7 +80,7 @@ export function sessionForPage(session: DemoSession | null, page: DemoPage): Dem
   return session && session.page === page ? session : null;
 }
 
-/** Where /result (the callback_url) sends the browser: back to its page, or home with a notice. */
+/** Where /result sends the browser: back to its page, or home with a notice. */
 export function resultRedirectPath(session: DemoSession | null): string {
   if (!session) {
     return `${HOME_PATH}?result=elsewhere`;

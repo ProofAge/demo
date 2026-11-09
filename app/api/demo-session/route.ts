@@ -15,6 +15,7 @@ import { isDemoPage, isWorkspaceSlug, pageAllowsWorkspace } from '@/lib/demo-pag
 import { loadResult } from '@/lib/demo-session';
 import { clientIp, counter, CREATE_LIMIT, CREATE_WINDOW_SECONDS, hit, isSameOrigin } from '@/lib/rate-limit';
 import { clientFor } from '@/lib/proofage';
+import { verificationRequest } from '@/lib/verification-request';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,11 +69,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const created = await client.verifications().create({
-      external_id: visitorId,
-      callback_url: new URL('/result', request.url).toString(),
-      external_metadata: { demo: slug, page },
-    });
+    const created = await client.verifications().create(verificationRequest({ visitorId, slug, page }));
     if (!created?.id || !created.url) {
       throw new Error('create returned no id or url');
     }

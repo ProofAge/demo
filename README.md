@@ -16,12 +16,12 @@ One page, `/`: set up a session (which check, how it opens, which look), run it 
 | What your team sees | A replica of the console's "Verification details" page for this check, with your own photos |
 | Sample result | A labelled fixture for visitors who will not use a camera or an ID. No verification is created |
 | `/eudi-wallet-age-verification` | The wallet age check (beta, test wallet data), with the same result area |
-| `/result` | The `callback_url` of every verification. It only redirects back to `/`, which shows the result in place |
+| `/result` | Only for older verifications that still redirect here. It sends the browser back to `/`, which shows the result in place |
 
 | Layer | What it demonstrates |
 |---|---|
 | **Client SDK** | Loading `kyc-loader.js`, calling `KycService.start({ verificationUrl })`, handling `onComplete` / `onError` |
-| **Server-side session** | `POST /api/demo-session` creates the verification with HMAC signing (`@proofage/node`), an `external_id` from an httpOnly visitor cookie and `callback_url` = `/result`. Same-origin requests only, 25 new verifications per IP address per hour |
+| **Server-side session** | `POST /api/demo-session` creates the verification with HMAC signing (`@proofage/node`), an `external_id` from an httpOnly visitor cookie and no redirect, so the page is not reloaded after a check. Same-origin requests only, 25 new verifications per IP address per hour |
 | **Result in place** | `GET /api/demo-session?page=` asks ProofAge for the outcome and checks `external_id` against the visitor cookie before showing anything |
 | **Webhook receiver** | `POST /api/webhooks/proofage` picks the workspace by `X-Auth-Client`, verifies the signature, and keeps the decision payload for one hour (Upstash Redis). Payloads are never logged |
 | **Media** | `GET /api/demo-media?id=` streams a photo of the visitor's own verification after the ownership check, never cacheable. The browser never gets a ProofAge URL or key |

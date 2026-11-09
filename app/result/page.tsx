@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * The callback_url of every demo verification. It shows nothing itself: it sends the browser
- * back to the page the check started on, which shows the result in place. A phone after the
- * QR handoff has no cookies and lands on / with a one-line notice.
+ * Where the verifications created before the demo stopped asking for a redirect still send the
+ * browser. It shows nothing itself: it goes back to the page the check started on, which shows the
+ * result in place. A browser without the cookies lands on / with a one-line notice.
  */
 export default async function ResultPage(): Promise<never> {
   const store = await cookies();
