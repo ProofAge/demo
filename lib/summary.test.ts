@@ -115,10 +115,10 @@ test('a selfie check that fell back to an ID shows what arrived', () => {
 
 test('context line', () => {
   const at = new Date('2026-11-05T14:02:00');
-  assert.match(contextLine({ check: 'age-id', look: 'proofage', opens: 'popup', at, sample: false }), /^Age check by ID · over this page · ProofAge look · \d\d:\d\d$/);
+  assert.match(contextLine({ check: 'age-id', look: 'proofage', opens: 'popup', at, sample: false }), /^Age verification by ID · over this page · ProofAge look · \d\d:\d\d$/);
   assert.match(contextLine({ check: 'kyc', look: 'lumo', opens: 'tab', at, sample: false }), /^Identity verification \(KYC\) · in a new tab · Lumo look · \d\d:\d\d$/);
-  assert.equal(contextLine({ check: 'selfie', look: 'proofage', opens: null, at: null, sample: false }), 'Selfie age check · ProofAge look');
-  assert.equal(contextLine({ check: 'selfie', look: 'lumo', opens: 'popup', at, sample: true }), 'Selfie age check · Lumo look');
+  assert.equal(contextLine({ check: 'selfie', look: 'proofage', opens: null, at: null, sample: false }), 'Facial age estimation · ProofAge look');
+  assert.equal(contextLine({ check: 'selfie', look: 'lumo', opens: 'popup', at, sample: true }), 'Facial age estimation · Lumo look');
 });
 
 test('a selfie check with an empty document (nothing read) shows no document lines, and says no personal data arrived', () => {

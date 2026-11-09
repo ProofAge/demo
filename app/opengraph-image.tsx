@@ -5,5 +5,5 @@ export const contentType = 'image/png';
 export const alt = 'ProofAge live demo';
 
 export default function OgImage() {
-  return ogImage('ProofAge verification demo', 'Selfie age check, age check by ID and KYC, run on yourself');
+  return ogImage('ProofAge verification demo', 'Facial age estimation, age verification by ID and KYC, run on yourself');
 }

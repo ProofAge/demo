@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHECKS, LOOKS, OPENS } from './demo-pages.ts';
-import { CHECK_LABELS, DEFAULT_OPTIONS, LOOK_LINE, optionsQuery, parseOptions } from './demo-options.ts';
+import { CHECK_NAMES, DEFAULT_OPTIONS, LOOK_LINE, optionsQuery, parseOptions } from './demo-options.ts';
 
 test('defaults', () => {
   assert.deepEqual(DEFAULT_OPTIONS, { check: 'kyc', look: 'proofage', opens: 'popup' });
@@ -33,5 +33,9 @@ test('round trip for all 18 combinations', () => {
 test('copy', () => {
   assert.match(LOOK_LINE, /Lumo is a made-up brand/);
   assert.ok(!LOOK_LINE.includes('Powered by'));
-  assert.equal(CHECK_LABELS.kyc, 'Identity (KYC)');
+  assert.deepEqual(CHECK_NAMES, {
+    selfie: 'Facial age estimation',
+    'age-id': 'Age verification by ID',
+    kyc: 'Identity verification (KYC)',
+  });
 });

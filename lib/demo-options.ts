@@ -4,23 +4,17 @@ export type DemoOptions = { check: Check; look: Look; opens: Opens };
 
 export const DEFAULT_OPTIONS: DemoOptions = { check: 'kyc', look: 'proofage', opens: 'popup' };
 
-export const CHECK_LABELS: Record<Check, string> = {
-  selfie: 'Selfie age check',
-  'age-id': 'Age check by ID',
-  kyc: 'Identity (KYC)',
-};
-
-/** Labels for narrow phones, where the full ones wrap onto two lines. */
+/** Labels for narrow phones, where the full names wrap onto two lines. */
 export const CHECK_SHORT_LABELS: Record<Check, string> = {
   selfie: 'Selfie',
   'age-id': 'Age by ID',
   kyc: 'KYC',
 };
 
-/** Canonical names, for sentences. */
+/** The product names, exactly as in the brand book. */
 export const CHECK_NAMES: Record<Check, string> = {
-  selfie: 'Selfie age check',
-  'age-id': 'Age check by ID',
+  selfie: 'Facial age estimation',
+  'age-id': 'Age verification by ID',
   kyc: 'Identity verification (KYC)',
 };
 
@@ -32,7 +26,7 @@ export const CHECK_YOU_GET: Record<Check, string> = {
 
 /** Second hint line: the two ID checks look the same to the user. */
 export const CHECK_NOTE: Record<Check, string | null> = {
-  kyc: 'Your user sees the same screens as in Age check by ID.',
+  kyc: 'Your user sees the same screens as in Age verification by ID.',
   'age-id': 'Your user sees the same screens as in KYC.',
   selfie: null,
 };
@@ -43,7 +37,7 @@ export const OPENS_LINE =
 
 export const LOOK_LABELS: Record<Look, string> = { proofage: 'ProofAge', lumo: 'Your brand' };
 export const LOOK_LINE =
-  'Lumo is a made-up brand standing in for yours: name, logo, colours, corners and font, set in the console, no code.';
+  'Lumo is a made-up brand standing in for yours: name, logo, colors, corners and font, set in the console, no code.';
 
 type Params = URLSearchParams | Record<string, string | string[] | undefined>;
 

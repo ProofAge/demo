@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import {
-  CHECK_LABELS,
+  CHECK_NAMES,
   CHECK_SHORT_LABELS,
   CHECK_YOU_GET,
   CHECK_NOTE,
@@ -91,7 +91,7 @@ export function OptionsCard({ options, onChange, disabled }: { options: DemoOpti
   return (
     <section aria-label="Session options" className={`${surfaceCard} space-y-5 p-4 md:p-5`}>
       <Row id="hint-check" hint={<CheckHint check={options.check} />}>
-        <Segmented name="check" legend="Which flow to try" values={CHECK_ORDER} labels={CHECK_LABELS} shortLabels={CHECK_SHORT_LABELS} value={options.check} onChange={(check) => onChange({ ...options, check })} disabled={disabled} describedBy="hint-check" />
+        <Segmented name="check" legend="Which flow to try" values={CHECK_ORDER} labels={CHECK_NAMES} shortLabels={CHECK_SHORT_LABELS} value={options.check} onChange={(check) => onChange({ ...options, check })} disabled={disabled} describedBy="hint-check" />
       </Row>
       <Row id="hint-opens" hint={OPENS_LINE}>
         <Segmented name="opens" legend="Opens" values={OPENS} labels={OPENS_LABELS} value={options.opens} onChange={(opens) => onChange({ ...options, opens })} disabled={disabled} describedBy="hint-opens" />

@@ -20,7 +20,7 @@ const plexMono = localFont({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demo.proofage.net';
 const DESCRIPTION =
-  'Try the check your users will see: a selfie age check, age check by ID or identity verification (KYC). Run it on yourself, then see what your system and your team get back.';
+  'Try the check your users will see: facial age estimation, age verification by ID or identity verification (KYC). Run it on yourself, then see what your system and your team get back.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

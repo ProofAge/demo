@@ -120,7 +120,7 @@ function documentLines(document: Record<string, unknown>, fields: Record<string,
   ];
 }
 
-/** "Age check by ID · over this page · ProofAge look · 14:02". A sample has no time and was not opened. */
+/** "Age verification by ID · over this page · ProofAge look · 14:02". A sample has no time and was not opened. */
 export function contextLine(input: { check: Check; look: Look; opens: Opens | null; at: Date | null; sample: boolean }): string {
   const parts: string[] = [CHECK_NAMES[input.check]];
   if (!input.sample && input.opens) {
