@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHECKS, LOOKS, OPENS } from './demo-pages.ts';
-import { CHECK_NAMES, DEFAULT_OPTIONS, LOOK_LINE, optionsQuery, parseOptions } from './demo-options.ts';
+import { CHECK_LABELS, CHECK_NAMES, checkHint, DEFAULT_OPTIONS, LOOK_LINE, optionsQuery, parseOptions } from './demo-options.ts';
 
 test('defaults', () => {
   assert.deepEqual(DEFAULT_OPTIONS, { check: 'kyc', look: 'proofage', opens: 'popup' });
@@ -38,4 +38,11 @@ test('copy', () => {
     'age-id': 'Age verification by ID',
     kyc: 'Identity verification (KYC)',
   });
+});
+
+test('the switcher keeps short labels, and the exact product name sits right under it', () => {
+  assert.deepEqual(CHECK_LABELS, { selfie: 'Selfie age', 'age-id': 'Age by ID', kyc: 'Identity (KYC)' });
+  assert.equal(checkHint('kyc'), 'Identity verification (KYC). You get: every field on the document.');
+  assert.equal(checkHint('age-id'), 'Age verification by ID. You get: over 18, name, date of birth, document number.');
+  assert.equal(checkHint('selfie'), 'Facial age estimation. You get: over 18 or not.');
 });

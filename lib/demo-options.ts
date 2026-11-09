@@ -4,7 +4,19 @@ export type DemoOptions = { check: Check; look: Look; opens: Opens };
 
 export const DEFAULT_OPTIONS: DemoOptions = { check: 'kyc', look: 'proofage', opens: 'popup' };
 
-/** Labels for narrow phones, where the full names wrap onto two lines. */
+/**
+ * The switcher's labels are short on purpose. With the full product names all three buttons wrap
+ * and the control gets heavy (tried and reverted in Nov 2026). The exact names from the brand book
+ * sit right under it, in `checkHint`, and everywhere the check is named in a sentence. See the
+ * README, "Check names on the switcher", before changing these after a brand review.
+ */
+export const CHECK_LABELS: Record<Check, string> = {
+  selfie: 'Selfie age',
+  'age-id': 'Age by ID',
+  kyc: 'Identity (KYC)',
+};
+
+/** Labels for narrow phones, where even the short ones wrap onto two lines. */
 export const CHECK_SHORT_LABELS: Record<Check, string> = {
   selfie: 'Selfie',
   'age-id': 'Age by ID',
@@ -23,6 +35,11 @@ export const CHECK_YOU_GET: Record<Check, string> = {
   'age-id': 'You get: over 18, name, date of birth, document number',
   kyc: 'You get: every field on the document',
 };
+
+/** The line under the switcher: the check's exact product name, then what it returns. */
+export function checkHint(check: Check): string {
+  return `${CHECK_NAMES[check]}. ${CHECK_YOU_GET[check]}.`;
+}
 
 /** Second hint line: the two ID checks look the same to the user. */
 export const CHECK_NOTE: Record<Check, string | null> = {

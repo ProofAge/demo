@@ -11,7 +11,7 @@ One page, `/`: set up a session (which check, how it opens, which look), run it 
 | Part | What it shows |
 |---|---|
 | Flow preview | Screenshots of the real widget for the chosen check and look (`public/flow/`) |
-| Session options | Check (selfie age check, age check by ID, identity verification), how it opens (popup or new tab), look (ProofAge or Lumo, a brand we made up). Deep links: `/?check=kyc&look=lumo&open=tab` |
+| Session options | Check (facial age estimation, age verification by ID, identity verification), how it opens (popup or new tab), look (ProofAge or Lumo, a brand we made up). Deep links: `/?check=kyc&look=lumo&open=tab` |
 | What you get | A human summary of what your system receives, and the signed webhook behind a toggle |
 | What your team sees | A replica of the console's "Verification details" page for this check, with your own photos |
 | Sample result | A labelled fixture for visitors who will not use a camera or an ID. No verification is created |
@@ -29,6 +29,14 @@ One page, `/`: set up a session (which check, how it opens, which look), run it 
 Seven workspaces back the checks: `selfie`, `age-id`, `kyc`, each with a `-lumo` twin that has the Lumo branding, and `eudi-wallet` for the wallet page. That one needs its own workspace with the digital ID wallet offered first; with the selfie keys the page would open a plain selfie check.
 
 > **Why create the session on the server:** only a signed server request can set `external_id`; the browser SDK's unsigned create drops it. The outcome comes from the API, never from the browser's `onComplete`, which carries no result.
+
+### Check names on the switcher
+
+The switcher's buttons say `Identity (KYC)`, `Age by ID` and `Selfie age` on purpose, and `KYC`, `Age by ID` and `Selfie` on phones. This is a decision, not a brand-book miss, so please do not "fix" it in a brand review.
+
+- `BRAND.md` asks for product names "exactly". With the exact names on the buttons (tried and reverted in November 2026) all three wrap at about 1024 px and the control gets heavy.
+- The exact names are right under the buttons, in the line that changes with the selection: `Identity verification (KYC)`, `Age verification by ID`, `Facial age estimation`.
+- The result's context line, the page description and the social image use the exact names too. Only the switcher's buttons are short.
 
 ## Stack
 
